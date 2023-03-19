@@ -1,0 +1,16 @@
+<link href="font.css" rel="stylesheet">
+<link href="embed.css" rel="stylesheet">
+<style>
+    #centered {
+        text-align:center;
+    }
+</style>
+<p id="centered" style="font-size:30px; font-weight:700">Repository Loader</p>
+<p><i>Repositories you load here will be saved for the next time you launch the app.</i></p>
+<br>
+<p><i>To add a repository, write the repository's address as user/repo (do not put the full URL)</i></p>
+<form id="loadedrepos" onsubmit="return false">
+    <input type="text" placeholder="user/repo" id="repoinput"> <input type="submit" onclick="addnewrepo()" id="addbutton" value="Add">
+    <br>
+</form>
+<script src="./renderer_issueload.js"></script>
