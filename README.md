@@ -3,3 +3,5 @@ GitStats is a lightweight ElectronJS app that allows you to view stats about Git
 
 # Contributing
 This repository is opened to contributions via Pull Requests
+
+#
