@@ -3,7 +3,7 @@
   "productName": "GitStats",
   "description": "An app written for my IA of my Senior High School Year 2023.",
   "keywords": [],
-  "main": "./main.js",
+  "main": "./main.ts",
   "version": "1.0.0",
   "author": "megamaz",
   "scripts": {

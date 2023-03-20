@@ -1,10 +1,10 @@
-class UserData {
+export class UserData {
     usertoken:string
     loadedrepos:Array<string>
     graphs:Array<Graphs>
 }
 
-class Graphs {
+export class Graphs {
     type:number
     data:GraphData
     url:string
@@ -13,11 +13,11 @@ class Graphs {
     labelData:LabelData
 }
 
-class GraphData {
+export class GraphData {
     x:Array<string>
     y:Array<number>
 }
 
-type LabelData = {
+export type LabelData = {
     [label: string]: Array<number>
 }
