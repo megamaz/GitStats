@@ -1,10 +1,13 @@
-const { app, BrowserWindow, ipcMain} = require('electron')
-const path = require('path')
-const fs = require('fs')
-const { Octokit } = require('octokit')
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const { Octokit } = require('octokit');
+const { UserData } = require('./modules/');
 
 const datafolder = process.env.APPDATA + '\\GitStats'
+const datajson = `${datafolder}\\data.json`
 let user = null;
+let wind = undefined;
 
 function createWindow () {
   createdatadir()
@@ -21,12 +24,14 @@ function createWindow () {
   })
   win.removeMenu();
   
+  wind = win; // bad
+
   // ipcMain events
   ipcMain.on('onlogin', (event, token) => {
     createdatadir()
-    var data = JSON.parse(fs.readFileSync(datafolder + "\\data.json"))
+    var data = JSON.parse(datajson)
     data.usertoken = token;
-    fs.writeFileSync(datafolder + "\\data.json", JSON.stringify(data))
+    fs.writeFileSync(datajson, JSON.stringify(data))
     startup(win)
   })
   
@@ -36,12 +41,12 @@ function createWindow () {
 
   ipcMain.on("resetdata", (event) => {
     console.log("resetdata")
-    fs.unlinkSync(datafolder + "\\data.json") // delete the existing data.json
+    fs.unlinkSync(datajson) // delete the existing data.json
     createdatadir() // recreate the data.json, now blank
   })
 
   ipcMain.on("updatedata", (event, newdata) => {
-    fs.writeFileSync(datafolder + "\\data.json", JSON.stringify(newdata))
+    fs.writeFileSync(datajson, JSON.stringify(newdata))
   })
 
   ipcMain.on("testtoken", (event, kit) => {
@@ -56,7 +61,7 @@ app.whenReady().then(() => {
   
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      startup().then(() => {
+      startup(wind).then(() => {
         createWindow()
       })
     }
@@ -73,16 +78,16 @@ app.on('window-all-closed', () => {
 function startup(win) {
 	var token;
   createdatadir()
-  token = JSON.parse(fs.readFileSync(datafolder + "\\data.json")).usertoken
+  token = JSON.parse(datajson).usertoken
   var kit = new Octokit({
     auth: token
   })
   user = kit;
   testtoken(kit, win)
+  return // shrug
 }
 
 function testtoken(kit, win) {
-  // bad test
   kit.rest.repos.get({
     owner:"megamaz",
     repo:"megamaz"
@@ -91,7 +96,7 @@ function testtoken(kit, win) {
       success:true,
       reason:"Token successfully verified",
     })
-  }).catch((resolve, reject) => {
+  }).catch((...err) => {
     win.webContents.send("loginsuccess", {
       success:false,
       reason:"Token is invalid or expired, or no token was found.",
@@ -105,16 +110,11 @@ function createdatadir(){
   // because an empty token actually works
   // but doesn't give you the availability
   // of managing issues.
-  var defaultdata = {
-    usertoken:"no_token_set",
-    loadedrepos:[],
-    graphs:[]
-  }
 
   if(!fs.existsSync(datafolder)) {
 		fs.mkdirSync(datafolder)
 	}
-	if(!fs.existsSync(datafolder + "\\data.json")) {
-		fs.writeFileSync(datafolder + "\\data.json", JSON.stringify(defaultdata))
+	if(!fs.existsSync(datajson)) {
+		fs.writeFileSync(datajson, JSON.stringify(UserData.default))
 	}
 }

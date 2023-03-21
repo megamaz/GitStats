@@ -1,7 +1,14 @@
+
 export class UserData {
     usertoken:string
     loadedrepos:Array<string>
     graphs:Array<Graphs>
+
+    static default = {
+        usertoken:"no_token_set",
+        thiloadedrepos:[],
+        graphs:[]
+    }
 }
 
 export class Graphs {
@@ -20,4 +27,8 @@ export class GraphData {
 
 export type LabelData = {
     [label: string]: Array<number>
+}
+
+module.exports = {
+    UserData: UserData
 }

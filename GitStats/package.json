@@ -3,7 +3,7 @@
   "productName": "GitStats",
   "description": "An app written for my IA of my Senior High School Year 2023.",
   "keywords": [],
-  "main": "./main.ts",
+  "main": "./main.js",
   "version": "1.0.0",
   "author": "megamaz",
   "scripts": {
@@ -13,15 +13,16 @@
   },
   "dependencies": {
     "chart.js": "^4.2.1",
+    "electron": "23.1.1",
     "electron-squirrel-startup": "^1.0.0",
-    "octokit": "2.0.14"
+    "octokit": "2.0.14",
+    "typescript": "^5.0.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.5",
     "@electron-forge/maker-deb": "^6.0.5",
     "@electron-forge/maker-rpm": "^6.0.5",
     "@electron-forge/maker-squirrel": "^6.0.5",
-    "@electron-forge/maker-zip": "^6.0.5",
-    "electron": "23.1.1"
+    "@electron-forge/maker-zip": "^6.0.5"
   }
 }
