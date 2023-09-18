@@ -94,6 +94,7 @@ function addnewrepo() {
                 console.log(`added new repo ${repoinput.value}`)
                 updatelist(userdata)
             }).catch((...err) => {
+                console.log(err);
                 updatelist()
                 console.log("inputted non-existing repo.")
                 var urlwrong = document.createElement("p")
