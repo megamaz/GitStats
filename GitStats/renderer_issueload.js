@@ -1,8 +1,6 @@
 var fs = window.electron.fs; // those are technically supposed to be const, but script reloading doesn't like that
 var datafolder = window.electron.datafolder;
 var shell = window.electron.shell;
-
-var kit = window.electron.kit;
 var repoinput = document.getElementById("repoinput");
 var addbutton = document.getElementById("addbutton");
 
@@ -80,7 +78,9 @@ function addnewrepo() {
     // check if the input is valid using... REGEX!
     var matches = repoinput.value.match("^(\\w|\\-)+\\/(\\w|\\-)+$")
     if(matches !== null) {
-        // that means we good! I think
+        // this should make sure that we re-fetch the Octokit object
+        var kit = window.electron.kit;
+
         if(!userdata.loadedrepos.includes(repoinput.value)) {
             // check if its a valid repo
             var reponame = repoinput.value.split("/");
