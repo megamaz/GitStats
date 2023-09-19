@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
 	startup: () => {ipcRenderer.send("startup")},
 	resetdata: () => {ipcRenderer.send("resetdata")},
 	updateuserdata: (newdata) => {ipcRenderer.send("updatedata", newdata)},
+    getuserdata: () => getuserdata(),
 
 	// lazy fix
 	send: (channel, ...data) => ipcRenderer.send(channel, ...data),
@@ -28,7 +29,6 @@ contextBridge.exposeInMainWorld('electron', {
     }
 })
 
-// copy-paste from renderer_issueload.js
 function getuserdata(){
 	var datafolder = process.env.APPDATA + "\\GitStats"
     if(!fs.existsSync(datafolder)) {
@@ -36,6 +36,7 @@ function getuserdata(){
     }
 
     var data = fs.readFileSync(datafolder + "\\data.json")
+    // FIXME this is terrible.
     while(data.length == 0) {
         // crappy fix
         data = fs.readFileSync(datafolder + "\\data.json")
