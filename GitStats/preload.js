@@ -13,6 +13,10 @@ contextBridge.exposeInMainWorld('electron', {
 	resetdata: () => {ipcRenderer.send("resetdata")},
 	updateuserdata: (newdata) => {ipcRenderer.send("updatedata", newdata)},
     getuserdata: () => getuserdata(),
+    makeChart: (ctx, data) => {
+        var ch = new Chart(ctx, data)
+        ch.resize(undefined, 500)
+    },
 
 	// lazy fix
 	send: (channel, ...data) => ipcRenderer.send(channel, ...data),
@@ -23,10 +27,6 @@ contextBridge.exposeInMainWorld('electron', {
 	fs: fs,
 	datafolder: process.env.APPDATA + "\\GitStats",
 	kit: new Octokit({auth: getuserdata().usertoken}),
-    makeChart: (ctx, data) => {
-        var ch = new Chart(ctx, data)
-        ch.resize(undefined, 500)
-    }
 })
 
 function getuserdata(){

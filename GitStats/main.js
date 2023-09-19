@@ -19,7 +19,7 @@ function createWindow () {
     },
     icon:"./assets/gitstats.ico"
   })
-  win.removeMenu();
+  // win.removeMenu();
   
   // ipcMain events
   ipcMain.on('onlogin', (event, token) => {
