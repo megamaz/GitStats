@@ -11,4 +11,11 @@ Here's why:
 # Contributing
 This branch is open for contributions.
 
-#
+Running the code:
+```
+> cd GitStats/src
+> npm run clean
+> npm run build
+> npm run copy-files
+> npm run start
+```
