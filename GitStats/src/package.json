@@ -3,18 +3,20 @@
   "productName": "GitStats",
   "description": "A Lightweight ElectronJS app to get statistics about a repository.",
   "keywords": [],
-  "main": "./main.ts",
+  "main": "../dist/app.js",
   "version": "2.0.0",
   "author": "megamaz",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "build": "./node_modules/.bin/tsc",
+    "copy-files": "copyfiles -u 1 src/**/*.html src/**/*.css dist",
+    "clean": "rimraf dist/"
   },
   "dependencies": {
     "chart.js": "^4.2.1",
-    "electron-squirrel-startup": "^1.0.0",
-    "octokit": "2.0.14"
+    "electron-squirrel-startup": "^1.0.0"
   },
   "devDependencies": {
     "@electron-forge/cli": "^6.0.5",
@@ -22,7 +24,12 @@
     "@electron-forge/maker-rpm": "^6.0.5",
     "@electron-forge/maker-squirrel": "^6.0.5",
     "@electron-forge/maker-zip": "^6.0.5",
+    "@types/electron": "^1.6.10",
+    "@types/node": "^20.6.3",
+    "copyfiles": "^2.4.1",
     "electron": "23.1.1",
+    "octokit": "^3.1.0",
+    "rimraf": "^5.0.1",
     "typescript": "^5.2.2"
   }
 }
