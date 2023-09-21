@@ -1,1 +1,1 @@
-document.getElementById("test").innerHTML = "Renderer doing its thing";
+console.log(document)
