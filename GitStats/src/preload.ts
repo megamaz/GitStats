@@ -15,7 +15,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // load the global.css into the indexes
     // this should be done in the renderers, but if I end up having multiple renderers then having this at the start gets annoying
     var globalcss = document.createElement("link")
-    globalcss.href = "../styles/global.css"
+    globalcss.href = "./global.css"
     globalcss.rel = "stylesheet"
     document.head.appendChild(globalcss)
+})
+
+contextBridge.exposeInMainWorld('login', () => {
+    tryLogin: () => ipcRenderer.invoke("login:tryLogin")
 })

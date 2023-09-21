@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import * as fs from 'fs';
 import path = require('path');
 
@@ -31,7 +31,7 @@ class Userdata {
     usertoken: string;
 
     static default = {
-        "usertoken": "no_token_set"
+        usertoken: "no_token_set"
     }
 }
 
@@ -65,7 +65,7 @@ export default class Main {
         }
         );
         Main.mainWindow
-            .loadURL(`${__dirname}/pages/index.html`);
+            .loadURL(`${__dirname}/page_index.html`);
         Main.mainWindow.on('closed', Main.onClose);
     }
 
@@ -95,8 +95,8 @@ export default class Main {
                         newdata[prop] = Userdata.default[prop];
                     }
                 }
+                fs.writeFileSync(datajson_path, JSON.stringify(newdata));
             }
-            fs.writeFileSync(datajson_path, JSON.stringify(newdata));
         }
     }
 
@@ -111,3 +111,8 @@ export default class Main {
         Main.application.on('ready', Main.onReady);
     }
 }
+
+// handles
+ipcMain.handle("login:tryLogin", () => {
+
+})
