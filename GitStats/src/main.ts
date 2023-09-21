@@ -1,7 +1,6 @@
 import { BrowserWindow } from 'electron';
 import * as fs from 'fs';
 import path = require('path');
-import { json } from 'stream/consumers';
 
 
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
