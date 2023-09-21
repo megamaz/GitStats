@@ -3,7 +3,7 @@
   "productName": "GitStats",
   "description": "A Lightweight ElectronJS app to get statistics about a repository.",
   "keywords": [],
-  "main": "../dist/app.js",
+  "main": "./dist/app.js",
   "version": "2.0.0",
   "author": "megamaz",
   "scripts": {
@@ -11,8 +11,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "build": ".\\node_modules\\.bin\\tsc",
-    "copy-files": "copyfiles *.html *.css ./assets/* ../dist",
-    "clean": "rimraf ../dist/",
+    "copy-files": "copyfiles *.html *.css ./assets/* ./dist",
+    "clean": "rimraf ./dist/",
     "full-build":"npm run clean && npm run build && npm run copy-files"
   },
   "dependencies": {

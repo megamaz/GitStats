@@ -5,7 +5,7 @@ import path = require('path');
 
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
-let datajson_path = "./data.json"
+let datajson_path = `${__dirname}/data.json`
 
 function checkJsonFormats(check: Object, latest: Object): boolean {
     // this will check if "check"'s format matches that of "latest"
