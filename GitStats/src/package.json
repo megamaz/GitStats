@@ -12,7 +12,8 @@
     "make": "electron-forge make",
     "build": ".\\node_modules\\.bin\\tsc",
     "copy-files": "copyfiles ./pages/* ../dist && copyfiles ./styles/* ../dist && copyfiles ./assets/* ../dist",
-    "clean": "rimraf ../dist/"
+    "clean": "rimraf ../dist/",
+    "full-build":"npm run clean && npm run build && npm run copy-files"
   },
   "dependencies": {
     "chart.js": "^4.2.1",

@@ -14,8 +14,7 @@ This branch is open for contributions.
 Running the code:
 ```
 > cd GitStats/src
-> npm run clean
-> npm run build
-> npm run copy-files
+> npm install
+> npm run full-build
 > npm run start
 ```
