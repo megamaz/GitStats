@@ -18,3 +18,11 @@ Running the code:
 > npm run full-build
 > npm run start
 ```
+
+# Plans for v2
+- I'm not a big fan of the way I handled multiple tabs. While it was intuitive to use, Electron was not built for the way I implemented it, which was the biggest source of problems.
+- Completely open filtering for data. This means...
+    - Ability to view data for issues, pull requests, contributors, commits, and possibly more.
+    - Ability to filter from those data. For issues/PRs, this means filtering by label, commentor, or assignee. For commits, this would mean filtering by commiter.
+- Ability to export the data as a CSV file.
+- Documents. In better terms, instead of adding a repository and then loading it, having a document feature that separates everything into documents. I have hopes this will make the app easier to use.
