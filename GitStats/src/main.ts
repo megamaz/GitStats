@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron';
-import * as fs from 'fs';
+import { Octokit } from 'octokit';
 import path = require('path');
-
+import * as fs from 'fs';
 
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
@@ -113,6 +113,20 @@ export default class Main {
 }
 
 // handles
-ipcMain.handle("login:tryLogin", () => {
+ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
+    var kit = new Octokit({
+        auth: "no_token_set"
+    });
+    
+    var username = repo.split("/")[0];
+    var reponame = repo.split("/")[1];
 
+    kit.rest.repos.get({
+        owner: username,
+        repo: reponame
+    }).then((...args) => {
+        console.log(`All is good: ${args}`);
+    }).catch((...args) => {
+        console.log(`Something failed: ${args}`);
+    })
 })

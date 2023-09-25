@@ -20,6 +20,10 @@ window.addEventListener('DOMContentLoaded', () => {
     document.head.appendChild(globalcss)
 })
 
-contextBridge.exposeInMainWorld('login', () => {
+contextBridge.exposeInMainWorld('login', {
     tryLogin: () => ipcRenderer.invoke("login:tryLogin")
+})
+
+contextBridge.exposeInMainWorld('gitstats', {
+    checkRepoExists: (repo:string) => ipcRenderer.invoke("gitstats:checkRepoExists", repo)
 })
