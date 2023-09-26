@@ -3,6 +3,12 @@
     <head></head>
 
     <body>
-        <p>Font test</p>
+        
+        <form onsubmit="TryLogin(); return false" id="login">
+            <input type="password" placeholder="Insert Token" id="token-insert">
+            <input type="submit">
+        </form>
+
+        <script src="./renderer_login.js"></script>
     </body>
 </html>

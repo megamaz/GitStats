@@ -1,4 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron')
+import * as fs from 'fs';
+
 /*
     contextBridge serves to expose an API inside of the renderers.
     The ipcRenderer serves to send information to the main. 
@@ -14,14 +16,28 @@ const { contextBridge, ipcRenderer } = require('electron')
 window.addEventListener('DOMContentLoaded', () => {
     // load the global.css into the indexes
     // this should be done in the renderers, but if I end up having multiple renderers then having this at the start gets annoying
-    var globalcss = document.createElement("link")
-    globalcss.href = "./global.css"
-    globalcss.rel = "stylesheet"
-    document.head.appendChild(globalcss)
+    var globalcss = document.createElement("link");
+    globalcss.href = "./global.css";
+    globalcss.rel = "stylesheet";
+    document.head.appendChild(globalcss);
+
+    // TEMP this will eventually be replaced with better UI
+    // https://stackoverflow.com/questions/2727167/how-do-you-get-a-list-of-the-names-of-all-files-present-in-a-directory-in-node-j
+    var files = fs.readdirSync(".").forEach((file: string) => {
+        if(file.endsWith(".html")) {
+            var newelem = document.createElement("a");
+            newelem.href = `./${file}`;
+            newelem.innerText = file;
+            document.body.appendChild(
+                newelem
+            );
+            document.body.appendChild(document.createElement("br"));
+        }
+    });
 })
 
 contextBridge.exposeInMainWorld('login', {
-    tryLogin: () => ipcRenderer.invoke("login:tryLogin")
+    tryLogin: (token: string) => ipcRenderer.invoke("login:tryLogin", token)
 })
 
 contextBridge.exposeInMainWorld('gitstats', {

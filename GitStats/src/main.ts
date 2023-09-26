@@ -6,6 +6,7 @@ import * as fs from 'fs';
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
 let datajson_path = `${__dirname}/data.json`
+let kit: undefined | Octokit     = undefined;
 
 function checkJsonFormats(check: Object, latest: Object): boolean {
     // this will check if "check"'s format matches that of "latest"
@@ -113,10 +114,34 @@ export default class Main {
 }
 
 // handles
-ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
-    var kit = new Octokit({
-        auth: "no_token_set"
+
+ipcMain.handle("login:tryLogin", async (event: Event, token: string) => {
+    // update the token
+    var data: Userdata = JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
+    data.usertoken = token;
+    fs.writeFileSync(datajson_path, JSON.stringify(data));
+
+    kit = new Octokit({
+        auth: token
     });
+
+    // thank ChatGPT for the better check
+    try {
+        var validation = await kit.request("GET /user", {
+            headers: {
+                authorization: `token ${token}`
+            }
+        });
+        console.log(`Login success!`)
+    } catch(error) {
+        console.error(`Login fail: ${error}`)
+    }
+})
+
+ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
+    if(kit === undefined) {
+        return;
+    }
     
     var username = repo.split("/")[0];
     var reponame = repo.split("/")[1];
