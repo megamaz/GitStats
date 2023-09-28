@@ -8,7 +8,16 @@ function addRepoToList() {
     if(matches !== null) {
         // this means the input was valid
         // at this point we need to check if the actual repo is valid
-        window.gitstats.checkRepoExists(repo_input.value);
+        var is_valid = window.gitstats.CheckRepoExists(repo_input.value);
+        if(is_valid) {
+            // save it to the list of loaded repos
+
+        } else {
+            // we don't really care why it's not valid, we just know it isn't
+            // TODO let the user know why there's an error.
+            var errtext = document.createElement("p");
+            errtext.innerText = "Repo doesn't exist, or token is invalid / expired."
+        }
         
     }
 }

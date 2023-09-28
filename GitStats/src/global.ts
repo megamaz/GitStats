@@ -1,8 +1,8 @@
 export interface GitStatsElectronAPI {
-  checkRepoExists: (repo: string) => Promise<void>,
+  CheckRepoExists: (repo: string) => Promise<boolean>,
 }
 export interface LoginAPI {
-  tryLogin: (token: string) => Promise<boolean>
+  TryLogin: (token: string) => Promise<boolean>
 }
 
 declare global {

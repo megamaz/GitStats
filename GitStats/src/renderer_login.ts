@@ -1,7 +1,7 @@
 function TryLogin() {
     var token = <HTMLInputElement>document.getElementById("token-insert");
     
-    window.login.tryLogin(token.value).then((login_success: boolean) => {
+    window.login.TryLogin(token.value).then((login_success: boolean) => {
         var newtext = document.createElement("p");
         if(login_success) {
             newtext.innerText = "Success logging in."

@@ -60,9 +60,11 @@ async function TryLoginUpdateToken(token: string) {
 
 class Userdata {
     usertoken: string;
+    savedrepos: string[];
 
     static default = {
-        usertoken: "no_token_set"
+        usertoken: "no_token_set",
+        savedrepos: []
     }
 }
 
@@ -148,9 +150,9 @@ export default class Main {
 
 // handles
 
-ipcMain.handle("login:tryLogin", async (event: Event, token: string) => {return await TryLoginUpdateToken(token)})
+ipcMain.handle("login:TryLogin", async (event: Event, token: string) => {return await TryLoginUpdateToken(token)});
 
-ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
+ipcMain.handle("gitstats:CheckRepoExists", (event: Event, repo: string) => {
     if(kit === undefined) {
         return;
     }
@@ -162,8 +164,19 @@ ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
         owner: username,
         repo: reponame
     }).then((...args) => {
-        console.log(`All is good: ${args}`);
+        return true;
     }).catch((...args) => {
-        console.log(`Something failed: ${args}`);
+        return false;
     })
-})
+});
+
+ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
+    var data = <Userdata>JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
+    if(!data.savedrepos.includes(repo)) {
+        // right now I'm preventing loading the same repo twice
+        // it's possible in the future that for whatever reason someone will want to do this
+        // this is a problem I will tackle when it shows up.
+        data.savedrepos.push(repo);
+        fs.writeFileSync(datajson_path, JSON.stringify(data));
+    }
+});

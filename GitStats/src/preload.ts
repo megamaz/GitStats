@@ -37,9 +37,10 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 
 contextBridge.exposeInMainWorld('login', {
-    tryLogin: (token: string) => {return ipcRenderer.invoke("login:tryLogin", token)}
+    TryLogin: (token: string) => {return ipcRenderer.invoke("login:TryLogin", token);}
 })
 
 contextBridge.exposeInMainWorld('gitstats', {
-    checkRepoExists: (repo:string) => ipcRenderer.invoke("gitstats:checkRepoExists", repo)
+    CheckRepoExists: (repo:string) => {return ipcRenderer.invoke("gitstats:CheckRepoExists", repo);},
+    SaveRepo: (repo: string) => {ipcRenderer.invoke("gitstats:SaveRepo");}
 })
