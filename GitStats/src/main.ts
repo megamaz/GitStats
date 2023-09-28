@@ -28,6 +28,36 @@ function checkJsonFormats(check: Object, latest: Object): boolean {
     return true;
 }
 
+async function TryLogin() {
+    var data: Userdata = JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
+    var token = data.usertoken;
+
+    kit = new Octokit({
+        auth: token
+    });
+
+    // thank ChatGPT for the better check
+    try {
+        var validation = await kit.request("GET /user", {
+            headers: {
+                authorization: `token ${token}`
+            }
+        });
+        return true;
+    } catch(error) {
+        return false;
+    }
+}
+
+async function TryLoginUpdateToken(token: string) {
+    // update the token
+    var data: Userdata = JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
+    data.usertoken = token;
+    fs.writeFileSync(datajson_path, JSON.stringify(data));
+
+    return await TryLogin();
+}
+
 class Userdata {
     usertoken: string;
 
@@ -105,7 +135,10 @@ export default class Main {
         // we pass the Electron.App object and the  
         // Electron.BrowserWindow into this function 
         // so this class has no dependencies. This 
-        // makes the code easier to write tests for 
+        // makes the code easier to write tests for
+        
+        TryLogin();
+        
         Main.BrowserWindow = browserWindow;
         Main.application = app;
         Main.application.on('window-all-closed', Main.onWindowAllClosed);
@@ -115,28 +148,7 @@ export default class Main {
 
 // handles
 
-ipcMain.handle("login:tryLogin", async (event: Event, token: string) => {
-    // update the token
-    var data: Userdata = JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
-    data.usertoken = token;
-    fs.writeFileSync(datajson_path, JSON.stringify(data));
-
-    kit = new Octokit({
-        auth: token
-    });
-
-    // thank ChatGPT for the better check
-    try {
-        var validation = await kit.request("GET /user", {
-            headers: {
-                authorization: `token ${token}`
-            }
-        });
-        console.log(`Login success!`)
-    } catch(error) {
-        console.error(`Login fail: ${error}`)
-    }
-})
+ipcMain.handle("login:tryLogin", async (event: Event, token: string) => {return await TryLoginUpdateToken(token)})
 
 ipcMain.handle("gitstats:checkRepoExists", (event: Event, repo: string) => {
     if(kit === undefined) {

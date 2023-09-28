@@ -37,7 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
 })
 
 contextBridge.exposeInMainWorld('login', {
-    tryLogin: (token: string) => ipcRenderer.invoke("login:tryLogin", token)
+    tryLogin: (token: string) => {return ipcRenderer.invoke("login:tryLogin", token)}
 })
 
 contextBridge.exposeInMainWorld('gitstats', {
