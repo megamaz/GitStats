@@ -11,12 +11,14 @@ function addRepoToList() {
         var is_valid = window.gitstats.CheckRepoExists(repo_input.value);
         if(is_valid) {
             // save it to the list of loaded repos
+            window.gitstats.SaveRepo(repo_input.value);
 
         } else {
             // we don't really care why it's not valid, we just know it isn't
             // TODO let the user know why there's an error.
             var errtext = document.createElement("p");
-            errtext.innerText = "Repo doesn't exist, or token is invalid / expired."
+            errtext.innerText = "Repo doesn't exist, or token is invalid / expired.";
+            document.body.appendChild(errtext);
         }
         
     }

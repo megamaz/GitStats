@@ -18,6 +18,13 @@ Running the code:
 > npm run full-build
 > npm run start
 ```
+I recommend you create a `data.json` file inside the `src` directory, so that it can be copied inside the `dist` foler on build. Here's a sample `data.json` file:
+```json
+{
+    "usertoken":"your token",
+    "savedrepos":["megamaz/GitStats"]
+}
+```
 
 # Plans for v2
 - I'm not a big fan of the way I handled multiple tabs. While it was intuitive to use, Electron was not built for the way I implemented it, which was the biggest source of problems.

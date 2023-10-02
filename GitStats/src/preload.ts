@@ -42,5 +42,5 @@ contextBridge.exposeInMainWorld('login', {
 
 contextBridge.exposeInMainWorld('gitstats', {
     CheckRepoExists: (repo:string) => {return ipcRenderer.invoke("gitstats:CheckRepoExists", repo);},
-    SaveRepo: (repo: string) => {ipcRenderer.invoke("gitstats:SaveRepo");}
+    SaveRepo: (repo: string) => {ipcRenderer.invoke("gitstats:SaveRepo", repo);}
 })
