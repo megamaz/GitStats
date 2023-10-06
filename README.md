@@ -18,7 +18,7 @@ Running the code:
 > npm run full-build
 > npm run start
 ```
-I recommend you create a `data.json` file inside the `src` directory, so that it can be copied inside the `dist` foler on build. Here's a sample `data.json` file:
+I recommend you create a `userdata.json` file inside the `src` directory, so that it can be copied inside the `dist` foler on build. Here's a sample `userdata.json` file:
 ```json
 {
     "usertoken":"your token",

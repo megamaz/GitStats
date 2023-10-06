@@ -11,9 +11,9 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "build": ".\\node_modules\\.bin\\tsc",
-    "copy-files": "copyfiles *.html *.css data.json ./assets/* ./dist",
+    "copy-files": "copyfiles *.html *.css userdata.json userdata.schema.json ./assets/* ./dist",
     "clean": "rimraf ./dist/",
-    "full-build":"npm run clean && npm run build && npm run copy-files"
+    "full-build": "npm run clean && npm run build && npm run copy-files"
   },
   "dependencies": {
     "chart.js": "^4.2.1",
@@ -27,6 +27,7 @@
     "@electron-forge/maker-zip": "^6.0.5",
     "@types/electron": "^1.6.10",
     "@types/node": "^20.6.3",
+    "ajv": "^8.12.0",
     "copyfiles": "^2.4.1",
     "electron": "23.1.1",
     "octokit": "^3.1.0",

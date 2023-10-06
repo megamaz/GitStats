@@ -1,0 +1,24 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "userdata",
+    "description": "Represents the user's data.",
+    "type":"object",
+
+    "properties": {
+        "usertoken":{
+            "description":"The user's GitHub Fine-Grained token.",
+            "type":"string",
+            "default":"no_token_set"
+        },
+        "savedrepos":{
+            "description": "The user's saved repos, stored as an array of strings of user/repo",
+            "type":"array",
+            "items": {
+                "type":"string"
+            },
+            "default":[]
+        }
+    },
+
+    "required": ["usertoken", "savedrepos"]
+}
