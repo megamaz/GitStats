@@ -4,13 +4,20 @@
     <head></head>
     
     <body>
+        <h1>GitStats Home</h1>
         <form id="repo-adder" onsubmit="return false">
             <label for="repo-input">Insert repo (do not insert the full URL)</label>
             <input type="text" id="repo-input" placeholder="user/repo">
 
-            <input type="submit" id="repo-submit" onclick="addRepoToList()" value="Load">
+            <input type="submit" id="repo-submit" onclick="SaveRepo()" value="Load">
         </form>
         
+        <div>
+            <ul id="loadedrepos">
+
+            </ul>
+        </div>
+
         <script src="./renderer_index.js"></script>
     </body>
 </html>

@@ -8,6 +8,7 @@ import Ajv2020 from 'ajv/dist/2020';
 
 let datajson_path = `${__dirname}/userdata.json`
 let kit: undefined | Octokit = undefined;
+let current_loaded = "none loaded";
 
 function VerifySchema(object:Object, schema:Object): boolean {
     var ajv = new Ajv2020();
@@ -156,6 +157,7 @@ ipcMain.handle("gitstats:CheckRepoExists", (event: Event, repo: string) => {
 });
 
 ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
+    // returns true if saved, false if not.
     var data = <Userdata>JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
     if(!data.savedrepos.includes(repo)) {
         // right now I'm preventing loading the same repo twice
@@ -163,5 +165,24 @@ ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
         // this is a problem I will tackle when it shows up.
         data.savedrepos.push(repo);
         fs.writeFileSync(datajson_path, JSON.stringify(data));
+        return true;
     }
+    return false;
 });
+
+ipcMain.handle("gitstats:UpdateCurrentLoaded", (event:Event, loaded: string) => {
+    current_loaded = loaded;
+})
+
+ipcMain.handle("gitstats:GetCurrentLoaded", (event: Event) => {
+    return current_loaded;
+})
+
+ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
+    var data = <Userdata>JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
+    return data.savedrepos;
+})
+
+ipcMain.handle("utilities:LoadURL", (event: Event, url:string) => {
+    Main.mainWindow.loadURL(`${__dirname}/${url}`);
+})

@@ -21,19 +21,6 @@ window.addEventListener('DOMContentLoaded', () => {
     globalcss.rel = "stylesheet";
     document.head.appendChild(globalcss);
 
-    // TEMP this will eventually be replaced with better UI
-    // https://stackoverflow.com/questions/2727167/how-do-you-get-a-list-of-the-names-of-all-files-present-in-a-directory-in-node-j
-    var files = fs.readdirSync(".").forEach((file: string) => {
-        if(file.endsWith(".html")) {
-            var newelem = document.createElement("a");
-            newelem.href = `./${file}`;
-            newelem.innerText = file;
-            document.body.appendChild(
-                newelem
-            );
-            document.body.appendChild(document.createElement("br"));
-        }
-    });
 })
 
 contextBridge.exposeInMainWorld('login', {
@@ -42,5 +29,12 @@ contextBridge.exposeInMainWorld('login', {
 
 contextBridge.exposeInMainWorld('gitstats', {
     CheckRepoExists: (repo:string) => {return ipcRenderer.invoke("gitstats:CheckRepoExists", repo);},
-    SaveRepo: (repo: string) => {ipcRenderer.invoke("gitstats:SaveRepo", repo);}
+    SaveRepo: (repo: string) => {return ipcRenderer.invoke("gitstats:SaveRepo", repo);},
+    UpdateCurrentLoaded: (loaded: string) => {return ipcRenderer.invoke("gitstats:UpdateCurrentLoaded", loaded);},
+    GetSavedRepos: () => {return ipcRenderer.invoke("gitstats:GetSavedRepos")},
+    GetCurrentLoaded: () => {return ipcRenderer.invoke("gitstats:GetCurrentLoaded");}
+})
+
+contextBridge.exposeInMainWorld('utilities', {
+    LoadURL: (url: string) => {ipcRenderer.invoke("utilities:LoadURL", url);}
 })

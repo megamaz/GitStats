@@ -1,14 +1,22 @@
 export interface GitStatsElectronAPI {
   CheckRepoExists: (repo: string) => Promise<boolean>,
-  SaveRepo: (repo: string) => Promise<void>
+  SaveRepo: (repo: string) => Promise<boolean>,
+  UpdateCurrentLoaded: (loaded: string) => Promise<void>
+  GetCurrentLoaded: () => Promise<string>,
+  GetSavedRepos: () => Promise<Array<string>>
 }
 export interface LoginAPI {
   TryLogin: (token: string) => Promise<boolean>
 }
 
+export interface UtilitiesAPI {
+  LoadURL: (url: string) => Promise<void>
+}
+
 declare global {
   interface Window {
     gitstats: GitStatsElectronAPI,
-    login: LoginAPI
+    login: LoginAPI,
+    utilities: UtilitiesAPI
   }
 }

@@ -33,3 +33,4 @@ I recommend you create a `userdata.json` file inside the `src` directory, so tha
     - Ability to filter from those data. For issues/PRs, this means filtering by label, commentor, or assignee. For commits, this would mean filtering by commiter.
 - Ability to export the data as a CSV file.
 - Documents. In better terms, instead of adding a repository and then loading it, having a document feature that separates everything into documents. I have hopes this will make the app easier to use.
+- *I am not a frontend designer.* The current frontend may not look best, but that's simply not what I do. If someone wants to PR something better, I would really appreciate it. 
