@@ -9,6 +9,10 @@ export interface LoginAPI {
   TryLogin: (token: string) => Promise<boolean>
 }
 
+export interface SqlAPI {
+  Run: (command: string) => Promise<boolean>
+}
+
 export interface UtilitiesAPI {
   LoadURL: (url: string) => Promise<void>
 }

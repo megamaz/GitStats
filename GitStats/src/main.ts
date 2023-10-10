@@ -1,8 +1,9 @@
-import { BrowserWindow, ipcMain } from 'electron';
+import { BrowserWindow, Data, ipcMain } from 'electron';
+import Ajv2020 from 'ajv/dist/2020';
+import * as sqlite3 from 'sqlite3';
 import { Octokit } from 'octokit';
 import path = require('path');
 import * as fs from 'fs';
-import Ajv2020 from 'ajv/dist/2020';
 
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
@@ -10,7 +11,15 @@ let datajson_path = `${__dirname}/userdata.json`
 let kit: undefined | Octokit = undefined;
 let current_loaded = "none loaded";
 
-function VerifySchema(object:Object, schema:Object): boolean {
+// database setup
+let db: undefined | sqlite3.Database = new sqlite3.Database("./.db",
+    sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
+    (err) => {
+        console.error(err.message);
+    });
+
+
+function VerifySchema(object: Object, schema: Object): boolean {
     var ajv = new Ajv2020();
     var validate = ajv.compile(schema);
     var valid = validate(object);
@@ -33,7 +42,7 @@ async function TryLogin() {
             }
         });
         return true;
-    } catch(error) {
+    } catch (error) {
         return false;
     }
 }
@@ -124,9 +133,9 @@ export default class Main {
         // Electron.BrowserWindow into this function 
         // so this class has no dependencies. This 
         // makes the code easier to write tests for
-        
+
         TryLogin();
-        
+
         Main.BrowserWindow = browserWindow;
         Main.application = app;
         Main.application.on('window-all-closed', Main.onWindowAllClosed);
@@ -136,13 +145,13 @@ export default class Main {
 
 // handles
 
-ipcMain.handle("login:TryLogin", async (event: Event, token: string) => {return await TryLoginUpdateToken(token)});
+ipcMain.handle("login:TryLogin", async (event: Event, token: string) => { return await TryLoginUpdateToken(token) });
 
 ipcMain.handle("gitstats:CheckRepoExists", (event: Event, repo: string) => {
-    if(kit === undefined) {
+    if (kit === undefined) {
         return;
     }
-    
+
     var username = repo.split("/")[0];
     var reponame = repo.split("/")[1];
 
@@ -159,7 +168,7 @@ ipcMain.handle("gitstats:CheckRepoExists", (event: Event, repo: string) => {
 ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
     // returns true if saved, false if not.
     var data = <Userdata>JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
-    if(!data.savedrepos.includes(repo)) {
+    if (!data.savedrepos.includes(repo)) {
         // right now I'm preventing loading the same repo twice
         // it's possible in the future that for whatever reason someone will want to do this
         // this is a problem I will tackle when it shows up.
@@ -170,19 +179,27 @@ ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
     return false;
 });
 
-ipcMain.handle("gitstats:UpdateCurrentLoaded", (event:Event, loaded: string) => {
+ipcMain.handle("gitstats:UpdateCurrentLoaded", (event: Event, loaded: string) => {
     current_loaded = loaded;
-})
+});
 
 ipcMain.handle("gitstats:GetCurrentLoaded", (event: Event) => {
     return current_loaded;
-})
+});
 
 ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
     var data = <Userdata>JSON.parse(fs.readFileSync(datajson_path, "utf-8"));
     return data.savedrepos;
-})
+});
 
-ipcMain.handle("utilities:LoadURL", (event: Event, url:string) => {
+ipcMain.handle("sql:Run", (event: Event, command: string) => {
+    // issue is that we know IF there's an error but not WHAT the error is
+    // well we do, but I don't care
+    db.run(command, (err) => {
+        return err === null;
+    });
+});
+
+ipcMain.handle("utilities:LoadURL", (event: Event, url: string) => {
     Main.mainWindow.loadURL(`${__dirname}/${url}`);
-})
+});

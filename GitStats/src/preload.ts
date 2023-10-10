@@ -21,11 +21,11 @@ window.addEventListener('DOMContentLoaded', () => {
     globalcss.rel = "stylesheet";
     document.head.appendChild(globalcss);
 
-})
+});
 
 contextBridge.exposeInMainWorld('login', {
     TryLogin: (token: string) => {return ipcRenderer.invoke("login:TryLogin", token);}
-})
+});
 
 contextBridge.exposeInMainWorld('gitstats', {
     CheckRepoExists: (repo:string) => {return ipcRenderer.invoke("gitstats:CheckRepoExists", repo);},
@@ -33,8 +33,12 @@ contextBridge.exposeInMainWorld('gitstats', {
     UpdateCurrentLoaded: (loaded: string) => {return ipcRenderer.invoke("gitstats:UpdateCurrentLoaded", loaded);},
     GetSavedRepos: () => {return ipcRenderer.invoke("gitstats:GetSavedRepos")},
     GetCurrentLoaded: () => {return ipcRenderer.invoke("gitstats:GetCurrentLoaded");}
-})
+});
+
+contextBridge.exposeInMainWorld('sql', {
+    Run: (command:string) => {return ipcRenderer.invoke("sql:Run");}
+});
 
 contextBridge.exposeInMainWorld('utilities', {
     LoadURL: (url: string) => {ipcRenderer.invoke("utilities:LoadURL", url);}
-})
+});
