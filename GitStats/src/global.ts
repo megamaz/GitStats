@@ -3,7 +3,8 @@ export interface GitStatsElectronAPI {
   SaveRepo: (repo: string) => Promise<boolean>,
   UpdateCurrentLoaded: (loaded: string) => Promise<void>
   GetCurrentLoaded: () => Promise<string>,
-  GetSavedRepos: () => Promise<Array<string>>
+  GetSavedRepos: () => Promise<Array<string>>,
+  PopulateIssueTable: (repo: string) => Promise<void>
 }
 export interface LoginAPI {
   TryLogin: (token: string) => Promise<boolean>
@@ -21,6 +22,7 @@ declare global {
   interface Window {
     gitstats: GitStatsElectronAPI,
     login: LoginAPI,
-    utilities: UtilitiesAPI
+    utilities: UtilitiesAPI,
+    sql: SqlAPI
   }
 }

@@ -195,6 +195,45 @@ ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
     return data.savedrepos;
 });
 
+ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
+    var owner = repo.split("/")[0];
+    var name = repo.split("/")[1];    
+    kit.rest.issues.list({
+        owner:owner,
+        repo:name,
+        per_page:100,
+        page:1,
+        since:"1970-01-01T00:00:00.000Z",
+        state:"all",
+        sort:"created",
+        direction:"asc"
+    }).then((data) => {
+        console.log(data);
+        data.data.forEach(element => {
+            // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
+            var _number = element.number;
+            var _type = element.pull_request === undefined ? "issue" : "pr";
+            var _state = element.state == "open";
+            var _labels = "";
+            console.log(element.labels);
+            var _assignee = "";
+            element.assignees.forEach(assignee => {
+                _assignee += assignee.name + ",";
+            });
+            var _dateopen = Date.parse(element.created_at);
+            var _dateclose = element.closed_at === null ? null : Date.parse(element.closed_at);
+
+            // db.run insert whatnot
+        })
+    }).catch((...err) => {
+        console.error(err);
+    });
+
+    // TODO remove the below line, it's here for testing reasons
+    db.run(`DROP TABLE '${repo}_issues'`);
+
+})
+
 ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
     // once again, thank ChatGPT for this.
     // I was practically tearing my hair out trying to figure this out
@@ -203,7 +242,7 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
         db.get(command, params, function(err, rows) {
             if(err) reject(err);
             else resolve(rows);
-        })
+        });
     });
 });
 

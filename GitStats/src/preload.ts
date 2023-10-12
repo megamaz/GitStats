@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld('gitstats', {
     SaveRepo: (repo: string) => {return ipcRenderer.invoke("gitstats:SaveRepo", repo);},
     UpdateCurrentLoaded: (loaded: string) => {return ipcRenderer.invoke("gitstats:UpdateCurrentLoaded", loaded);},
     GetSavedRepos: () => {return ipcRenderer.invoke("gitstats:GetSavedRepos")},
-    GetCurrentLoaded: () => {return ipcRenderer.invoke("gitstats:GetCurrentLoaded");}
+    GetCurrentLoaded: () => {return ipcRenderer.invoke("gitstats:GetCurrentLoaded");},
+    PopulateIssueTable: (repo: string) => {ipcRenderer.invoke("gitstats:PopulateIssueTable", repo)}
 });
 
 contextBridge.exposeInMainWorld('sql', {
