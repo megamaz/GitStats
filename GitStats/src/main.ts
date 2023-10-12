@@ -15,7 +15,7 @@ let current_loaded = "none loaded";
 let db: undefined | sqlite3.Database = new sqlite3.Database("./.db",
     sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
     (err) => {
-        console.error(err.message);
+        console.error(err);
     });
 
 
@@ -79,6 +79,9 @@ export default class Main {
     private static onClose() {
         // Dereference the window object. 
         Main.mainWindow = null;
+
+        // close the database
+        db.close();
     }
 
     private static onReady() {
@@ -192,11 +195,15 @@ ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
     return data.savedrepos;
 });
 
-ipcMain.handle("sql:Run", (event: Event, command: string) => {
-    // issue is that we know IF there's an error but not WHAT the error is
-    // well we do, but I don't care
-    db.run(command, (err) => {
-        return err === null;
+ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
+    // once again, thank ChatGPT for this.
+    // I was practically tearing my hair out trying to figure this out
+    // I'm pretty new to all this TS / JS stuff, so I would never have figure this out
+    return new Promise((resolve, reject) => {
+        db.get(command, params, function(err, rows) {
+            if(err) reject(err);
+            else resolve(rows);
+        })
     });
 });
 

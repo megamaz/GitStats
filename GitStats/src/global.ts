@@ -10,7 +10,7 @@ export interface LoginAPI {
 }
 
 export interface SqlAPI {
-  Run: (command: string) => Promise<boolean>
+  Run: (command: string, params) => Promise<any>
 }
 
 export interface UtilitiesAPI {

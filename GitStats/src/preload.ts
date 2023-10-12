@@ -36,7 +36,7 @@ contextBridge.exposeInMainWorld('gitstats', {
 });
 
 contextBridge.exposeInMainWorld('sql', {
-    Run: (command:string) => {return ipcRenderer.invoke("sql:Run");}
+    Run: (command:string, params) => {return ipcRenderer.invoke("sql:Run", command, params);}
 });
 
 contextBridge.exposeInMainWorld('utilities', {
