@@ -11,6 +11,17 @@ let datajson_path = `${__dirname}/userdata.json`
 let kit: undefined | Octokit = undefined;
 let current_loaded = "none loaded";
 
+// the fact that I need to do this is dumb.
+interface Label {
+    id: number;
+    node_id: string;
+    url: string;
+    name: string;
+    color: string;
+    default: boolean;
+    description: string;
+}
+
 // database setup
 let db: undefined | sqlite3.Database = new sqlite3.Database("./.db",
     sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
@@ -157,15 +168,16 @@ ipcMain.handle("gitstats:CheckRepoExists", (event: Event, repo: string) => {
 
     var username = repo.split("/")[0];
     var reponame = repo.split("/")[1];
-
-    kit.rest.repos.get({
-        owner: username,
-        repo: reponame
-    }).then((...args) => {
-        return true;
-    }).catch((...args) => {
-        return false;
-    })
+    return new Promise((resolve, reject) => {
+        kit.rest.repos.get({
+            owner: username,
+            repo: reponame
+        }).then((...args) => {
+            resolve(true);
+        }).catch((...args) => {
+            resolve(false);
+        });
+    });
 });
 
 ipcMain.handle("gitstats:SaveRepo", (event: Event, repo: string) => {
@@ -197,40 +209,54 @@ ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
 
 ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
     var owner = repo.split("/")[0];
-    var name = repo.split("/")[1];    
-    kit.rest.issues.list({
-        owner:owner,
-        repo:name,
-        per_page:100,
-        page:1,
-        since:"1970-01-01T00:00:00.000Z",
-        state:"all",
-        sort:"created",
-        direction:"asc"
-    }).then((data) => {
-        console.log(data);
-        data.data.forEach(element => {
-            // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
-            var _number = element.number;
-            var _type = element.pull_request === undefined ? "issue" : "pr";
-            var _state = element.state == "open";
-            var _labels = "";
-            console.log(element.labels);
-            var _assignee = "";
-            element.assignees.forEach(assignee => {
-                _assignee += assignee.name + ",";
-            });
-            var _dateopen = Date.parse(element.created_at);
-            var _dateclose = element.closed_at === null ? null : Date.parse(element.closed_at);
+    var name = repo.split("/")[1];
+    // recursively is the exact way I did it in the first version
+    // PROS: ensures that we don't fetch the same page twice
+    // CONS: looks terrible and unreadable
+    // if someone can find a better way to do this, that would be really cool. 
+    (function GetAllIssues(page_to_check: number) {
+        kit.rest.issues.listForRepo({
+            owner: owner,
+            repo: name,
+            per_page: 100,
+            page: page_to_check,
+            since: "1970-01-01T00:00:00.000Z",
+            state: "all",
+            sort: "created",
+            direction: "asc"
+        }).then((data) => {
+            if (data.data.length != 0) {
+                data.data.forEach(element => {
+                    // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
+                    var _number = element.number;
+                    var _type = element.pull_request === undefined ? "issue" : "pr";
+                    var _state = element.state == "open";
+                    var _labels = "";
+                    element.labels.forEach((label: Label) => {
+                        _labels += `${label.name},`;
+                    });
+                    var _assignee = "";
+                    element.assignees.forEach(assignee => {
+                        _assignee += `${assignee.name},`;
+                    });
+                    var _dateopen = Date.parse(element.created_at);
+                    var _dateclose = element.closed_at === null ? 0 : Date.parse(element.closed_at);
 
-            // db.run insert whatnot
-        })
-    }).catch((...err) => {
-        console.error(err);
-    });
+                    db.run(`INSERT INTO '${repo}_issues' 
+                    (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
+                    VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
+                });
+                GetAllIssues(page_to_check + 1);
+                console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
+            }
+        }).catch((...err) => {
+            console.error(err);
+        });
+    })(1);
 
+    console.log("done");
     // TODO remove the below line, it's here for testing reasons
-    db.run(`DROP TABLE '${repo}_issues'`);
+    // db.run(`DROP TABLE '${repo}_issues'`);
 
 })
 
@@ -239,8 +265,8 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
     // I was practically tearing my hair out trying to figure this out
     // I'm pretty new to all this TS / JS stuff, so I would never have figure this out
     return new Promise((resolve, reject) => {
-        db.get(command, params, function(err, rows) {
-            if(err) reject(err);
+        db.all(command, params, function (err, rows) {
+            if (err) reject(err);
             else resolve(rows);
         });
     });
