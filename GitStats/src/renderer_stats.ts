@@ -20,17 +20,25 @@ window.addEventListener('DOMContentLoaded', () => {
     OnStart();
 })
 
-async function FetchAllIssues() {
+function FetchAllIssues() {
     // clear the table before re-filling it.
-    await window.sql.Run(`DELETE FROM '${current_repo}_issues'`, {});
+    window.sql.Run(`DELETE FROM '${current_repo}_issues'`, {});
 
     var p = document.createElement("p");
-    var stats_form = <HTMLFormElement>document.getElementById("stats");
-    stats_form.disabled = true;
     p.id = "loading-text";
-    p.innerText = "Populating issue table, please do not close the app...";
+    p.innerText = "Populating issue table... Closing the app early will cause the table to be incomplete";
     document.body.appendChild(p);
-    await window.gitstats.PopulateIssueTable(current_repo);
-    stats_form.disabled = false;
-    document.body.removeChild(p);
+    ToggleFormDisabled(true);
+    window.gitstats.PopulateIssueTable(current_repo).then(() => {
+        ToggleFormDisabled(false);
+        document.body.removeChild(p);
+    });
+}
+
+function ToggleFormDisabled(toggleto: boolean) {
+    var stats_form = <HTMLFormElement>document.getElementById("stats");
+    for (let i = 0; i < stats_form.elements.length; i++) {
+        let element = stats_form.elements[i] as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        element.disabled = toggleto;
+    }
 }

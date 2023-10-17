@@ -33,7 +33,7 @@ contextBridge.exposeInMainWorld('gitstats', {
     UpdateCurrentLoaded: (loaded: string) => {return ipcRenderer.invoke("gitstats:UpdateCurrentLoaded", loaded);},
     GetSavedRepos: () => {return ipcRenderer.invoke("gitstats:GetSavedRepos")},
     GetCurrentLoaded: () => {return ipcRenderer.invoke("gitstats:GetCurrentLoaded");},
-    PopulateIssueTable: (repo: string) => {ipcRenderer.invoke("gitstats:PopulateIssueTable", repo)}
+    PopulateIssueTable: (repo: string) => {return ipcRenderer.invoke("gitstats:PopulateIssueTable", repo)}
 });
 
 contextBridge.exposeInMainWorld('sql', {

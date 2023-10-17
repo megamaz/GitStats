@@ -208,16 +208,17 @@ ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
     return data.savedrepos;
 });
 
-ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
+ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string) => {
     running_fetch_task = true;
     var owner = repo.split("/")[0];
     var name = repo.split("/")[1];
+
     // recursively is the exact way I did it in the first version
     // PROS: ensures that we don't fetch the same page twice
     // CONS: looks terrible and unreadable
     // if someone can find a better way to do this, that would be really cool. 
-    (async function GetAllIssues(page_to_check: number) {
-        kit.rest.issues.listForRepo({
+    await (async function GetAllIssues(page_to_check: number) {
+        let data = await kit.rest.issues.listForRepo({
             owner: owner,
             repo: name,
             per_page: 100,
@@ -226,41 +227,42 @@ ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
             state: "all",
             sort: "created",
             direction: "asc"
-        }).then(async (data) => {
-            if (data.data.length != 0) {
-                data.data.forEach(element => {
-                    // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
-                    var _number = element.number;
-                    var _type = element.pull_request === undefined ? "issue" : "pr";
-                    var _state = element.state == "open";
-                    var _labels = "";
-                    element.labels.forEach((label: Label) => {
-                        _labels += `${label.name},`;
-                    });
-                    var _assignee = "";
-                    element.assignees.forEach(assignee => {
-                        _assignee += `${assignee.name},`;
-                    });
-                    var _dateopen = Date.parse(element.created_at);
-                    var _dateclose = element.closed_at === null ? 0 : Date.parse(element.closed_at);
-
-                    db.run(`INSERT INTO '${repo}_issues' 
-                    (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
-                    VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
-                });
-                console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
-                await GetAllIssues(page_to_check+1);
-            }
-        }).catch((...err) => {
-            console.error(err);
         });
 
+        if (data.data.length != 0) {
+            data.data.forEach(element => {
+                // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
+                var _number = element.number;
+                var _type = element.pull_request === undefined ? "issue" : "pr";
+                var _state = element.state == "open";
+                var _labels = "";
+                element.labels.forEach((label: Label) => {
+                    _labels += `${label.name},`;
+                });
+                var _assignee = "";
+                element.assignees.forEach(assignee => {
+                    _assignee += `${assignee.name},`;
+                });
+                var _dateopen = Date.parse(element.created_at);
+                var _dateclose = element.closed_at === null ? 0 : Date.parse(element.closed_at);
+
+                db.run(`INSERT INTO '${repo}_issues' 
+                (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
+                VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
+            });
+            console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
+            await GetAllIssues(page_to_check+1);
+        }
+        return;
+
     })(1).then(() => {
-        // FIXME for some reason this "done" is being logged before the above function actually finishes.
         running_fetch_task = false;
         console.log("Done filling table.");
     });
+    
+    console.log("Fully done!");
 
+    return; // this is required to mark it as done
 });
 
 ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
