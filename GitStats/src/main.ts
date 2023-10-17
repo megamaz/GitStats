@@ -7,9 +7,10 @@ import * as fs from 'fs';
 
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
-let datajson_path = `${__dirname}/userdata.json`
+const datajson_path = `${__dirname}/userdata.json`
 let kit: undefined | Octokit = undefined;
 let current_loaded = "none loaded";
+let running_fetch_task = false;
 
 // the fact that I need to do this is dumb.
 interface Label {
@@ -208,13 +209,14 @@ ipcMain.handle("gitstats:GetSavedRepos", (event: Event) => {
 });
 
 ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
+    running_fetch_task = true;
     var owner = repo.split("/")[0];
     var name = repo.split("/")[1];
     // recursively is the exact way I did it in the first version
     // PROS: ensures that we don't fetch the same page twice
     // CONS: looks terrible and unreadable
     // if someone can find a better way to do this, that would be really cool. 
-    (function GetAllIssues(page_to_check: number) {
+    (async function GetAllIssues(page_to_check: number) {
         kit.rest.issues.listForRepo({
             owner: owner,
             repo: name,
@@ -224,7 +226,7 @@ ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
             state: "all",
             sort: "created",
             direction: "asc"
-        }).then((data) => {
+        }).then(async (data) => {
             if (data.data.length != 0) {
                 data.data.forEach(element => {
                     // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
@@ -246,19 +248,20 @@ ipcMain.handle("gitstats:PopulateIssueTable", (event: Event, repo: string) => {
                     (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
                     VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
                 });
-                GetAllIssues(page_to_check + 1);
                 console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
+                await GetAllIssues(page_to_check+1);
             }
         }).catch((...err) => {
             console.error(err);
         });
-    })(1);
 
-    console.log("done");
-    // TODO remove the below line, it's here for testing reasons
-    // db.run(`DROP TABLE '${repo}_issues'`);
+    })(1).then(() => {
+        // FIXME for some reason this "done" is being logged before the above function actually finishes.
+        running_fetch_task = false;
+        console.log("Done filling table.");
+    });
 
-})
+});
 
 ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
     // once again, thank ChatGPT for this.
@@ -273,5 +276,7 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
 });
 
 ipcMain.handle("utilities:LoadURL", (event: Event, url: string) => {
-    Main.mainWindow.loadURL(`${__dirname}/${url}`);
+    if(!running_fetch_task) {
+        Main.mainWindow.loadURL(`${__dirname}/${url}`);
+    }
 });
