@@ -48,7 +48,7 @@ function FetchAllIssues() {
 async function CreateIssueGraph() {
     // most of this code is extremely similar to v1.
     // We're grabbing the data, generating the graph data, then we'll ask main to give us a graph object which we'll shove into the page.
-    
+
     var sql_querry = `SELECT * FROM '${current_repo}_issues'`;
     var graph_label = "";
     // FILTERS
@@ -56,26 +56,43 @@ async function CreateIssueGraph() {
     var label_filter = <HTMLInputElement>document.getElementById("label-filter");
     var assignee_filter = <HTMLInputElement>document.getElementById("assignee-filter");
 
+    var needs_and = false;
+
     var type_value = type_filter.options[type_filter.selectedIndex].value;
-    if(type_value != "both") {
+    if (type_value != "both") {
         sql_querry += ` WHERE _type='${type_value}'`
         graph_label += (type_value == 'pr' ? "PRs over time" : "Issues over time")
+        needs_and = true;
     } else {
         graph_label += "Issues and PRs over time"
     }
 
-    if(label_filter.value.trim() != '')
+    if (label_filter.value.trim() != '')
         graph_label += ` labeled with ${label_filter.value.trim()}`;
     label_filter.value.split(",").forEach(label => {
-        if(label != '')
-            sql_querry += ` AND _labels LIKE '%${label}%'`
+        if (label != '') {
+            if (needs_and)
+                sql_querry += " AND"
+            else {
+                sql_querry += " WHERE"
+                needs_and = true;
+            }
+            sql_querry += ` _labels LIKE '%${label}%'`
+        }
     });
 
-    if(assignee_filter.value.trim() != '')
+    if (assignee_filter.value.trim() != '')
         graph_label += ` assigned to ${assignee_filter.value.trim()}`;
     assignee_filter.value.split(",").forEach(assignee => {
-        if(assignee != '')
-            sql_querry += ` AND _assignee LIKE '%${assignee}%'`
+        if (assignee != '') {
+            if (needs_and)
+                sql_querry += " AND"
+            else {
+                sql_querry += " WHERE"
+                needs_and = true;
+            }
+            sql_querry += ` _assignee LIKE '%${assignee}%'`
+        }
     });
 
     sql_querry += " ORDER BY _dateopen"
@@ -88,11 +105,11 @@ async function CreateIssueGraph() {
     var points = []; // graph Y-axis
 
     var oldest = issue_data[0];
-    var newest = issue_data[issue_data.length-1];
+    var newest = issue_data[issue_data.length - 1];
 
     var stepsize = ((newest._dateopen - oldest._dateopen) / 100);
     var steps = [];
-    for(let i = oldest._dateopen; i < newest._dateopen; i += stepsize) {
+    for (let i = oldest._dateopen; i < newest._dateopen; i += stepsize) {
         steps.push(i);
         labels.push(new Date(i).toISOString().slice(0, 10));
     }
@@ -102,19 +119,19 @@ async function CreateIssueGraph() {
     issue_data.forEach(issue => {
         // since we're dealing with timesteps, I have to count how many issues OPENED and CLOSED between each step.
         // for every issue, increase the amount by 1.
-        amount ++;
+        amount++;
 
         // we need to save our closes (for the reason mentioned above)
         // a value of 0 means it's still opened
-        if(issue._dateclose != 0)
+        if (issue._dateclose != 0)
             closes.push(issue._dateclose);
 
         // now we need to check if the issue was closed in the latest timestep
         // if it was, we also need to remember that, in order to remove it from the closes list
         var toremove = [];
         closes.forEach(date_close => {
-            if(date_close < steps[0]) {
-                amount --;
+            if (date_close < steps[0]) {
+                amount--;
                 toremove.push(date_close);
             }
         });
@@ -124,7 +141,7 @@ async function CreateIssueGraph() {
         })
 
         // if the issue was created after our current step, we need to save the current amount for our current step and move on to the next timestep
-        if(issue._dateopen > steps[0]) {
+        if (issue._dateopen > steps[0]) {
             points.push(amount);
             steps.shift();
         }
@@ -136,7 +153,7 @@ async function CreateIssueGraph() {
             labels: labels,
             datasets: [
                 {
-                    label:graph_label,
+                    label: graph_label,
                     data: points,
                     tension: 0.5
                 }

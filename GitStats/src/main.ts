@@ -264,7 +264,7 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
                 });
                 var _assignee = "";
                 element.assignees.forEach(assignee => {
-                    _assignee += `${assignee.name},`;
+                    _assignee += `${assignee.login},`;
                 });
                 var _dateopen = Date.parse(element.created_at);
                 var _dateclose = element.closed_at === null ? 0 : Date.parse(element.closed_at);
