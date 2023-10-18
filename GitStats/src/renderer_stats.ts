@@ -141,7 +141,7 @@ async function CreateIssueGraph() {
         })
 
         // if the issue was created after our current step, we need to save the current amount for our current step and move on to the next timestep
-        if (issue._dateopen > steps[0]) {
+        while (issue._dateopen > steps[0]) {
             points.push(amount);
             steps.shift();
         }
