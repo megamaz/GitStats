@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron')
+import { Chart, registerables } from 'chart.js';
 import * as fs from 'fs';
 
+Chart.register(...registerables);
 /*
     contextBridge serves to expose an API inside of the renderers.
     The ipcRenderer serves to send information to the main. 
@@ -41,5 +43,10 @@ contextBridge.exposeInMainWorld('sql', {
 });
 
 contextBridge.exposeInMainWorld('utilities', {
-    LoadURL: (url: string) => {ipcRenderer.invoke("utilities:LoadURL", url);}
+    LoadURL: (url: string) => {ipcRenderer.invoke("utilities:LoadURL", url);},
+    // this is the exact way I handled it in v1. I do NOT like this.
+    // however, I also do not know of a better way to do this.
+    CreateChart: (canvas, data) => {
+        var ch = new Chart(canvas, data);
+    }
 });

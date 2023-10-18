@@ -1,16 +1,16 @@
-import { BrowserWindow, Data, ipcMain } from 'electron';
+import { BrowserWindow, ipcMain } from 'electron';
 import Ajv2020 from 'ajv/dist/2020';
 import * as sqlite3 from 'sqlite3';
 import { Octokit } from 'octokit';
-import path = require('path');
+import { Chart } from 'chart.js';
 import * as fs from 'fs';
-
 // my thanks to https://davembush.medium.com/typescript-and-electron-the-right-way-141c2e15e4e1 for the ts framework
 
 const datajson_path = `${__dirname}/userdata.json`
 let kit: undefined | Octokit = undefined;
 let current_loaded = "none loaded";
 let running_fetch_task = false;
+let mainWindowPublic: BrowserWindow | undefined = undefined; // bad
 
 // the fact that I need to do this is dumb.
 interface Label {
@@ -113,6 +113,8 @@ export default class Main {
         Main.mainWindow
             .loadURL(`${__dirname}/page_index.html`);
         Main.mainWindow.on('closed', Main.onClose);
+
+        mainWindowPublic = Main.mainWindow;
     }
 
     static dataSetup() {
@@ -212,11 +214,32 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     running_fetch_task = true;
     var owner = repo.split("/")[0];
     var name = repo.split("/")[1];
+    mainWindowPublic.setTitle(`GitStats: 0%`);
 
     // recursively is the exact way I did it in the first version
     // PROS: ensures that we don't fetch the same page twice
     // CONS: looks terrible and unreadable
     // if someone can find a better way to do this, that would be really cool. 
+    var pr_data_closed = await kit.rest.search.issuesAndPullRequests({
+        q:`repo:${repo}+is:pr+state:closed`,
+        per_page:1
+    });
+    var pr_data_opened = await kit.rest.search.issuesAndPullRequests({
+        q:`repo:${repo}+is:pr+state:open`,
+        per_page:1
+    });
+    var issue_data_closed = await kit.rest.search.issuesAndPullRequests({
+        q:`repo:${repo}+is:issue+state:closed`,
+        per_page:1
+    });
+    var issue_data_opened = await kit.rest.search.issuesAndPullRequests({
+        q:`repo:${repo}+is:issue+state:open`,
+        per_page:1
+    });
+    var total_issues = pr_data_closed.data.total_count + pr_data_opened.data.total_count + issue_data_closed.data.total_count + issue_data_opened.data.total_count;
+    var total_loaded = 0;
+
+    console.log(`Total issues + pr (open and closed): ${total_issues}`);
     await (async function GetAllIssues(page_to_check: number) {
         let data = await kit.rest.issues.listForRepo({
             owner: owner,
@@ -250,6 +273,9 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
                 (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
                 VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
             });
+            total_loaded += data.data.length;
+            mainWindowPublic.setProgressBar(total_loaded / total_issues);
+            mainWindowPublic.setTitle(`GitStats: ${(total_loaded / total_issues)*100}%`);
             console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
             await GetAllIssues(page_to_check+1);
         }
@@ -259,7 +285,8 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
         running_fetch_task = false;
         console.log("Done filling table.");
     });
-    
+    mainWindowPublic.setTitle(`GitStats`);
+    mainWindowPublic.setProgressBar(0);
     console.log("Fully done!");
 
     return; // this is required to mark it as done

@@ -16,6 +16,7 @@ export interface SqlAPI {
 
 export interface UtilitiesAPI {
   LoadURL: (url: string) => Promise<void>
+  CreateChart: (canvas, data) => Promise<any>
 }
 
 declare global {
