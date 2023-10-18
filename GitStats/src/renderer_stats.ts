@@ -71,7 +71,7 @@ async function CreateIssueGraph() {
             sql_querry += ` AND _labels LIKE '%${label}%'`
     });
 
-    if(label_filter.value.trim() != '')
+    if(assignee_filter.value.trim() != '')
         graph_label += ` assigned to ${assignee_filter.value.trim()}`;
     assignee_filter.value.split(",").forEach(assignee => {
         if(assignee != '')
