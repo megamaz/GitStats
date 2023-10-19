@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+
+    <body>
+        <h1 id="repoheader">Loaded/Repo</h1>
+        <a href="#" onclick="window.utilities.LoadURL('page_index.html')">Home</a>
+        <form id="stats" onsubmit="return false">
+            <!-- 
+                fun fact: the order of these buttons matter. Hitting enter by default will call the first button object.
+                This means if I had "fetch issues" come first, every time I hit enter it would refetch every issue.
+                Fun fact: This was a pain during testing.
+             -->
+            <button onclick="CreateIssueGraph();" type="submit">Create Issue Graph</button>
+            <button onclick="FetchAllIssues();">Fetch Issues</button>
+            <br>
+            
+            <label for="type-filter">Issue type: </label>
+            <select id="type-filter">
+                <option value="pr">Pull Requests only</option>
+                <option value="issue">Issues only</option>
+                <option value="both" selected>Both</option>
+            </select>
+            <br>
+            
+            <label for="label-filter">Label filter (separate by comma, no space): </label>
+            <input type="text" placeholder="Labels" id="label-filter"><br>
+            
+            <label for="assignee-filter">Assignee filter (separate by comma, no space): </label>
+            <input type="text" placeholder="Assignee" id="assignee-filter"><br>
+        </form>
+        <script src="./renderer_stats.js"></script>
+    </body>
+
+</html>

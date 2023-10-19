@@ -1,2 +1,7 @@
 node_modules
 out
+dist
+*.json
+!tsconfig.json
+!userdata.schema.json
+.db

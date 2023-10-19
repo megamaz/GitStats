@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+    <head></head>
+    
+    <body>
+        <h1>GitStats Home</h1>
+        <a href="#" onclick="window.utilities.LoadURL('page_login.html')">Login</a>
+        <form id="repo-adder" onsubmit="return false">
+            <label for="repo-input">Insert repo (do not insert the full URL)</label>
+            <input type="text" id="repo-input" placeholder="user/repo">
+
+            <input type="submit" id="repo-submit" onclick="SaveRepo()" value="Load">
+        </form>
+        
+        <div>
+            <ul id="loadedrepos">
+
+            </ul>
+        </div>
+        <p id="errtext"></p>
+        <br><br>
+        <p>GitStats is currently in Beta. To report issues, make contributions, suggest ideas, and help the project, head over to the <a href="#" onclick="window.utilities.shell.openExternal('https://github.com/megamaz/gitstats')">GitHub Repository</a>. The project is currently in dire need of a frontend designer. </p>
+        <script src="./renderer_index.js"></script>
+    </body>
+</html>
