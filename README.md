@@ -33,5 +33,5 @@ I recommend you create a `userdata.json` file inside the `src` directory, so tha
             - [ ] Commentor
             - [X] Assignee
             - [X] Issue / PR Type
-[ ] Ability to export the data as a CSV file.
+- [ ] Ability to export the data as a CSV file.
 - *I am not a frontend designer.* The current frontend may not look best, but that's simply not what I do. If someone wants to PR something better, I would really appreciate it. 
