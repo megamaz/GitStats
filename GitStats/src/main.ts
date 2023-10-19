@@ -110,6 +110,7 @@ export default class Main {
             icon: `${__dirname}/assets/gitstats.ico`
         }
         );
+        Main.mainWindow.removeMenu();
         Main.mainWindow
             .loadURL(`${__dirname}/page_index.html`);
         Main.mainWindow.on('closed', Main.onClose);

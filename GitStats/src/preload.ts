@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, shell } = require('electron')
 import { Chart, registerables } from 'chart.js';
 import * as fs from 'fs';
 
@@ -48,5 +48,7 @@ contextBridge.exposeInMainWorld('utilities', {
     // however, I also do not know of a better way to do this.
     CreateChart: (canvas, data) => {
         var ch = new Chart(canvas, data);
-    }
+    },
+
+    shell:shell
 });
