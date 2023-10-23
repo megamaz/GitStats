@@ -4,4 +4,4 @@ dist
 *.json
 !tsconfig.json
 !userdata.schema.json
-.db
+*.db

@@ -23,13 +23,6 @@ interface Label {
     description: string;
 }
 
-// database setup
-let db: undefined | sqlite3.Database = new sqlite3.Database("./.db",
-    sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
-    (err) => {
-        console.error(err);
-    });
-
 
 function VerifySchema(object: Object, schema: Object): boolean {
     var ajv = new Ajv2020();
@@ -91,9 +84,6 @@ export default class Main {
     private static onClose() {
         // Dereference the window object. 
         Main.mainWindow = null;
-
-        // close the database
-        db.close();
     }
 
     private static onReady() {
@@ -110,7 +100,7 @@ export default class Main {
             icon: `${__dirname}/assets/gitstats.ico`
         }
         );
-        Main.mainWindow.removeMenu();
+        // Main.mainWindow.removeMenu();
         Main.mainWindow
             .loadURL(`${__dirname}/page_index.html`);
         Main.mainWindow.on('closed', Main.onClose);
@@ -222,25 +212,41 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     // CONS: looks terrible and unreadable
     // if someone can find a better way to do this, that would be really cool. 
     var pr_data_closed = await kit.rest.search.issuesAndPullRequests({
-        q:`repo:${repo}+is:pr+state:closed`,
-        per_page:1
+        q: `repo:${repo}+is:pr+state:closed`,
+        per_page: 1
     });
     var pr_data_opened = await kit.rest.search.issuesAndPullRequests({
-        q:`repo:${repo}+is:pr+state:open`,
-        per_page:1
+        q: `repo:${repo}+is:pr+state:open`,
+        per_page: 1
     });
     var issue_data_closed = await kit.rest.search.issuesAndPullRequests({
-        q:`repo:${repo}+is:issue+state:closed`,
-        per_page:1
+        q: `repo:${repo}+is:issue+state:closed`,
+        per_page: 1
     });
     var issue_data_opened = await kit.rest.search.issuesAndPullRequests({
-        q:`repo:${repo}+is:issue+state:open`,
-        per_page:1
+        q: `repo:${repo}+is:issue+state:open`,
+        per_page: 1
     });
     var total_issues = pr_data_closed.data.total_count + pr_data_opened.data.total_count + issue_data_closed.data.total_count + issue_data_opened.data.total_count;
     var total_loaded = 0;
 
+    // create tables
+    var db_file_path = `./${owner}_${name}_issues.db`;
+    if(fs.existsSync(db_file_path)) {
+        fs.rmSync(db_file_path);
+    }
+    
+    var full_querry = ""
+    
+    full_querry += `CREATE TABLE '${repo}_issuelist' (_number INT, _type VARCHAR(5), _state BOOL, _dateopen TIMESTAMP, _dateclose TIMESTAMP)\n`;
+    full_querry += `CREATE TABLE '${repo}_labellist' (_label TEXT, _id INT, _color VARCHAR(7))\n`;
+    full_querry += `CREATE TABLE '${repo}_assigneelist' (_name TEXT, _id INT)\n`;
+    full_querry += `CREATE TABLE '${repo}_labellink' (_number INT, _id INT)\n`;
+    full_querry += `CREATE TABLE '${repo}_assigneelink' (_number INT, _id INT)\n`;
+
     console.log(`Total issues + pr (open and closed): ${total_issues}`);
+    var seen_labels = [];
+    var seen_assignees = [];
     await (async function GetAllIssues(page_to_check: number) {
         let data = await kit.rest.issues.listForRepo({
             owner: owner,
@@ -255,30 +261,33 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
 
         if (data.data.length != 0) {
             data.data.forEach(element => {
-                // (_number INT, _type VARCHAR(5), _state BOOL, _labels TEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)
                 var _number = element.number;
                 var _type = element.pull_request === undefined ? "issue" : "pr";
                 var _state = element.state == "open";
-                var _labels = "";
                 element.labels.forEach((label: Label) => {
-                    _labels += `${label.name},`;
+                    if(!seen_labels.includes(label.name)) {
+                        full_querry += `INSERT INTO '${repo}_labellist' (_label, _id, _color) VALUES ('${label.name}', ${seen_labels.length}, '${label.color}')\n`;
+                        seen_labels.push(label.name);
+                    }
+                    full_querry += `INSERT INTO '${repo}_labellink' (_number, _id) VALUES (${_number}, ${seen_labels.indexOf(label.name)})\n`;
                 });
-                var _assignee = "";
                 element.assignees.forEach(assignee => {
-                    _assignee += `${assignee.login},`;
+                    if(!seen_assignees.includes(assignee.login)) {
+                        full_querry += `INSERT INTO '${repo}_assigneelist' (_name, _id) VALUES ('${assignee.login}', ${seen_assignees.length})\n`;
+                        seen_assignees.push(assignee.login);
+                    }
+                    full_querry += `INSERT INTO '${repo}_assigneelink' (_number, _id) VALUES (${_number}, ${seen_assignees.indexOf(assignee.login)})\n`;
                 });
-                var _dateopen = Date.parse(element.created_at);
-                var _dateclose = element.closed_at === null ? 0 : Date.parse(element.closed_at);
+                var _dateopen = Date.parse(element.created_at)/1000;
+                var _dateclose = element.closed_at === null ? "NULL" : Date.parse(element.closed_at)/1000;
 
-                db.run(`INSERT INTO '${repo}_issues' 
-                (_number, _type, _state, _labels, _assignee, _dateopen, _dateclose)
-                VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, '${_labels}', '${_assignee}', ${_dateopen}, ${_dateclose})`);
+                full_querry += `INSERT INTO '${repo}_issuelist' (_number, _type, _state, _dateopen, _dateclose) VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, ${_dateopen}, ${_dateclose})\n`;
             });
             total_loaded += data.data.length;
             mainWindowPublic.setProgressBar(total_loaded / total_issues);
-            mainWindowPublic.setTitle(`GitStats: ${(total_loaded / total_issues)*100}%`);
+            mainWindowPublic.setTitle(`GitStats: ${(total_loaded / total_issues) * 100}%`);
             console.log(`${page_to_check} ${data.data.length}`); // I need to know that the program hasn't completely crashed.
-            await GetAllIssues(page_to_check+1);
+            await GetAllIssues(page_to_check + 1);
         }
         return;
 
@@ -288,25 +297,47 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     });
     mainWindowPublic.setTitle(`GitStats`);
     mainWindowPublic.setProgressBar(0);
+
+    let db = new sqlite3.Database(db_file_path, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+        console.error(err);
+    });
+    console.log(full_querry);
+    db.serialize(() => {
+        full_querry.split("\n").forEach(querry => {
+            if(querry != '') {
+                db.run(querry, (err) => {
+                    if(err) {
+                        console.error(`Could not run querry "${querry}": "${err}"`);
+                    }
+                });
+            }
+        })
+    })
     console.log("Fully done!");
 
     return; // this is required to mark it as done
 });
 
 ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
+    var repo = current_loaded.split("/")[1];
+    var owner = current_loaded.split("/")[0];
+    
+    let db = new sqlite3.Database(`./${owner}_${repo}_issues.db`, sqlite3.OPEN_READWRITE);
+    
     // once again, thank ChatGPT for this.
     // I was practically tearing my hair out trying to figure this out
-    // I'm pretty new to all this TS / JS stuff, so I would never have figure this out
+    // I'm pretty new to all this TS / JS stuff, so I would never have figured this out
     return new Promise((resolve, reject) => {
         db.all(command, params, function (err, rows) {
             if (err) reject(err);
             else resolve(rows);
         });
     });
+
 });
 
 ipcMain.handle("utilities:LoadURL", (event: Event, url: string) => {
-    if(!running_fetch_task) {
+    if (!running_fetch_task) {
         Main.mainWindow.loadURL(`${__dirname}/${url}`);
     }
 });

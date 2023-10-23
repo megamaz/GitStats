@@ -17,23 +17,12 @@ async function OnStart() {
     var header = document.getElementById("repoheader");
     header.innerText = `${current_repo}`;
 
-    // check if table already exists
-    // pull requests fall under issues
-    window.sql.Run(`CREATE TABLE '${current_repo}_issues' (_number INT, _type VARCHAR(5), _state BOOL, _labels TINYTEXT, _assignee TEXT, _dateopen BIGINT, _dateclose BIGINT)`, {}).then((...args) => {
-        FetchAllIssues();
-    }).catch((err) => {
-        // most likely solution is table already exists, so we're gonna log a warning
-        console.warn(`Table '${current_repo}_issues' not created: ${err}`);
-    });
 }
 window.addEventListener('DOMContentLoaded', () => {
     OnStart();
 })
 
 function FetchAllIssues() {
-    // clear the table before re-filling it.
-    window.sql.Run(`DELETE FROM '${current_repo}_issues'`, {});
-
     var p = document.createElement("p");
     p.id = "loading-text";
     p.innerText = "Populating issue table... Closing the app early will cause the table to be incomplete";
@@ -49,51 +38,14 @@ async function CreateIssueGraph() {
     // most of this code is extremely similar to v1.
     // We're grabbing the data, generating the graph data, then we'll ask main to give us a graph object which we'll shove into the page.
 
-    var sql_querry = `SELECT * FROM '${current_repo}_issues'`;
+    var sql_querry = `SELECT * FROM '${current_repo}_issuelist'`;
     var graph_label = "";
     // FILTERS
     var type_filter = <HTMLSelectElement>document.getElementById("type-filter");
     var label_filter = <HTMLInputElement>document.getElementById("label-filter");
     var assignee_filter = <HTMLInputElement>document.getElementById("assignee-filter");
 
-    var needs_and = false;
-
-    var type_value = type_filter.options[type_filter.selectedIndex].value;
-    if (type_value != "both") {
-        sql_querry += ` WHERE _type='${type_value}'`
-        graph_label += (type_value == 'pr' ? "PRs over time" : "Issues over time")
-        needs_and = true;
-    } else {
-        graph_label += "Issues and PRs over time"
-    }
-
-    if (label_filter.value.trim() != '')
-        graph_label += ` labeled with ${label_filter.value.trim()}`;
-    label_filter.value.split(",").forEach(label => {
-        if (label != '') {
-            if (needs_and)
-                sql_querry += " AND"
-            else {
-                sql_querry += " WHERE"
-                needs_and = true;
-            }
-            sql_querry += ` _labels LIKE '%${label}%'`
-        }
-    });
-
-    if (assignee_filter.value.trim() != '')
-        graph_label += ` assigned to ${assignee_filter.value.trim()}`;
-    assignee_filter.value.split(",").forEach(assignee => {
-        if (assignee != '') {
-            if (needs_and)
-                sql_querry += " AND"
-            else {
-                sql_querry += " WHERE"
-                needs_and = true;
-            }
-            sql_querry += ` _assignee LIKE '%${assignee}%'`
-        }
-    });
+    // TODO write the sql_querry generator.
 
     sql_querry += " ORDER BY _dateopen"
     console.log(sql_querry);

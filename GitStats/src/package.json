@@ -4,7 +4,7 @@
   "description": "A Lightweight ElectronJS app to get statistics about a repository.",
   "keywords": [],
   "main": "./dist/app.js",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "megamaz",
   "scripts": {
     "start": "electron-forge start",
