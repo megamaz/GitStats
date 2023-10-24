@@ -207,10 +207,12 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     var name = repo.split("/")[1];
     mainWindowPublic.setTitle(`GitStats: 0%`);
 
-    // recursively is the exact way I did it in the first version
-    // PROS: ensures that we don't fetch the same page twice
-    // CONS: looks terrible and unreadable
-    // if someone can find a better way to do this, that would be really cool. 
+    /* 
+        FIXME this code right here does not take into account discussions. This results in the count being a little bit off to what
+        the listForRepo function is listing, typically resulting in the progress bar going over 100%. This is currently unfixable,
+        because Octokit 3.1.1 does not allow for searching discussions (I tried is:discussion, and it got mad because I didn't include
+        is:pr or is:issue). I'm keeping this FIXME here for later.
+    */ 
     var pr_data_closed = await kit.rest.search.issuesAndPullRequests({
         q: `repo:${repo}+is:pr+state:closed`,
         per_page: 1
@@ -236,17 +238,21 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
         fs.rmSync(db_file_path);
     }
     
-    var full_querry = ""
+    var full_query = ""
     
-    full_querry += `CREATE TABLE '${repo}_issuelist' (_number INT, _type VARCHAR(5), _state BOOL, _dateopen TIMESTAMP, _dateclose TIMESTAMP)\n`;
-    full_querry += `CREATE TABLE '${repo}_labellist' (_label TEXT, _id INT, _color VARCHAR(7))\n`;
-    full_querry += `CREATE TABLE '${repo}_assigneelist' (_name TEXT, _id INT)\n`;
-    full_querry += `CREATE TABLE '${repo}_labellink' (_number INT, _id INT)\n`;
-    full_querry += `CREATE TABLE '${repo}_assigneelink' (_number INT, _id INT)\n`;
-
+    full_query += `CREATE TABLE '${repo}_issuelist' (_number INT, _type VARCHAR(5), _state BOOL, _dateopen TIMESTAMP, _dateclose TIMESTAMP)\n`;
+    full_query += `CREATE TABLE '${repo}_labellist' (_label TEXT, _id INT, _color VARCHAR(7))\n`;
+    full_query += `CREATE TABLE '${repo}_assigneelist' (_name TEXT, _id INT)\n`;
+    full_query += `CREATE TABLE '${repo}_labellink' (_number INT, _id INT)\n`;
+    full_query += `CREATE TABLE '${repo}_assigneelink' (_number INT, _id INT)\n`;
+    
     console.log(`Total issues + pr (open and closed): ${total_issues}`);
     var seen_labels = [];
     var seen_assignees = [];
+    // recursively is the exact way I did it in the first version
+    // PROS: ensures that we don't fetch the same page twice
+    // CONS: looks terrible and unreadable
+    // if someone can find a better way to do this, that would be really cool. 
     await (async function GetAllIssues(page_to_check: number) {
         let data = await kit.rest.issues.listForRepo({
             owner: owner,
@@ -266,22 +272,22 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
                 var _state = element.state == "open";
                 element.labels.forEach((label: Label) => {
                     if(!seen_labels.includes(label.name)) {
-                        full_querry += `INSERT INTO '${repo}_labellist' (_label, _id, _color) VALUES ('${label.name}', ${seen_labels.length}, '${label.color}')\n`;
+                        full_query += `INSERT INTO '${repo}_labellist' (_label, _id, _color) VALUES ('${label.name}', ${seen_labels.length}, '${label.color}')\n`;
                         seen_labels.push(label.name);
                     }
-                    full_querry += `INSERT INTO '${repo}_labellink' (_number, _id) VALUES (${_number}, ${seen_labels.indexOf(label.name)})\n`;
+                    full_query += `INSERT INTO '${repo}_labellink' (_number, _id) VALUES (${_number}, ${seen_labels.indexOf(label.name)})\n`;
                 });
                 element.assignees.forEach(assignee => {
                     if(!seen_assignees.includes(assignee.login)) {
-                        full_querry += `INSERT INTO '${repo}_assigneelist' (_name, _id) VALUES ('${assignee.login}', ${seen_assignees.length})\n`;
+                        full_query += `INSERT INTO '${repo}_assigneelist' (_name, _id) VALUES ('${assignee.login}', ${seen_assignees.length})\n`;
                         seen_assignees.push(assignee.login);
                     }
-                    full_querry += `INSERT INTO '${repo}_assigneelink' (_number, _id) VALUES (${_number}, ${seen_assignees.indexOf(assignee.login)})\n`;
+                    full_query += `INSERT INTO '${repo}_assigneelink' (_number, _id) VALUES (${_number}, ${seen_assignees.indexOf(assignee.login)})\n`;
                 });
                 var _dateopen = Date.parse(element.created_at)/1000;
                 var _dateclose = element.closed_at === null ? "NULL" : Date.parse(element.closed_at)/1000;
 
-                full_querry += `INSERT INTO '${repo}_issuelist' (_number, _type, _state, _dateopen, _dateclose) VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, ${_dateopen}, ${_dateclose})\n`;
+                full_query += `INSERT INTO '${repo}_issuelist' (_number, _type, _state, _dateopen, _dateclose) VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, ${_dateopen}, ${_dateclose})\n`;
             });
             total_loaded += data.data.length;
             mainWindowPublic.setProgressBar(total_loaded / total_issues);
@@ -293,31 +299,46 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
 
     })(1).then(() => {
         running_fetch_task = false;
-        console.log("Done filling table.");
+        console.log("Done generating query.");
     });
-    mainWindowPublic.setTitle(`GitStats`);
-    mainWindowPublic.setProgressBar(0);
+    mainWindowPublic.setTitle(`GitStats: Populating table...`);
+    mainWindowPublic.setProgressBar(1);
 
     let db = new sqlite3.Database(db_file_path, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         console.error(err);
     });
-    // console.log(full_querry);
-    // FIXME the serialize "finishes" before all the runs are done running.
-    // this means closing the app early will still cause issues.
-    db.serialize(() => {
-        full_querry.split("\n").forEach(querry => {
-            if(querry != '') {
-                db.run(querry, (err) => {
-                    if(err) {
-                        console.error(`Could not run querry "${querry}": "${err}"`);
-                    }
-                });
-            }
+    
+    // once again... thanks, ChatGPT. This one is beyond me.
+    return new Promise<void>((resolve, reject) => {
+        db.serialize();
+        const queries = full_query.split("\n")
+        
+        const promises = queries.map(query => {
+            return new Promise<void>((resolve, reject) => {
+                if(query != '') {
+                    db.run(query, (err) => {
+                        if(err) {
+                            reject(err);
+                        }
+                        resolve();
+                    });
+                } else {
+                    resolve(); // without this we're left with an unfullfilled query
+                }
+            });
+        });
+        
+        Promise.all(promises).then((...args) => {
+            running_fetch_task = false;
+            mainWindowPublic.setTitle("GitStats");
+            mainWindowPublic.setProgressBar(0);
+            db.close();
+            console.log("Done running all queries.");
+            resolve();
+        }).catch((err) => {
+            reject(err);
         });
     });
-    console.log("Fully done!");
-
-    return; // this is required to mark it as done
 });
 
 ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
