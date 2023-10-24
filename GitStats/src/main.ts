@@ -301,7 +301,9 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     let db = new sqlite3.Database(db_file_path, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
         console.error(err);
     });
-    console.log(full_querry);
+    // console.log(full_querry);
+    // FIXME the serialize "finishes" before all the runs are done running.
+    // this means closing the app early will still cause issues.
     db.serialize(() => {
         full_querry.split("\n").forEach(querry => {
             if(querry != '') {
@@ -311,8 +313,8 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
                     }
                 });
             }
-        })
-    })
+        });
+    });
     console.log("Fully done!");
 
     return; // this is required to mark it as done
