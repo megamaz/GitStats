@@ -233,18 +233,18 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     var total_loaded = 0;
 
     // create tables
-    var db_file_path = `./${owner}_${name}_issues.db`;
+    var db_file_path = `./db_${owner}_${name}.db`;
     if(fs.existsSync(db_file_path)) {
         fs.rmSync(db_file_path);
     }
     
     var full_query = ""
     
-    full_query += `CREATE TABLE '${repo}_issuelist' (_number INT, _type VARCHAR(5), _state BOOL, _dateopen TIMESTAMP, _dateclose TIMESTAMP)\n`;
-    full_query += `CREATE TABLE '${repo}_labellist' (_label TEXT, _id INT, _color VARCHAR(7))\n`;
-    full_query += `CREATE TABLE '${repo}_assigneelist' (_name TEXT, _id INT)\n`;
-    full_query += `CREATE TABLE '${repo}_labellink' (_number INT, _id INT)\n`;
-    full_query += `CREATE TABLE '${repo}_assigneelink' (_number INT, _id INT)\n`;
+    full_query += `CREATE TABLE issuelist (_number INT, _type VARCHAR(5), _state BOOL, _dateopen TIMESTAMP, _dateclose TIMESTAMP)\n`;
+    full_query += `CREATE TABLE labellist (_label TEXT, _id INT, _color VARCHAR(7))\n`;
+    full_query += `CREATE TABLE assigneelist (_name TEXT, _id INT)\n`;
+    full_query += `CREATE TABLE labellink (_number INT, _id INT)\n`;
+    full_query += `CREATE TABLE assigneelink (_number INT, _id INT)\n`;
     
     console.log(`Total issues + pr (open and closed): ${total_issues}`);
     var seen_labels = [];
@@ -272,22 +272,22 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
                 var _state = element.state == "open";
                 element.labels.forEach((label: Label) => {
                     if(!seen_labels.includes(label.name)) {
-                        full_query += `INSERT INTO '${repo}_labellist' (_label, _id, _color) VALUES ('${label.name}', ${seen_labels.length}, '${label.color}')\n`;
+                        full_query += `INSERT INTO labellist (_label, _id, _color) VALUES ('${label.name}', ${seen_labels.length}, '${label.color}')\n`;
                         seen_labels.push(label.name);
                     }
-                    full_query += `INSERT INTO '${repo}_labellink' (_number, _id) VALUES (${_number}, ${seen_labels.indexOf(label.name)})\n`;
+                    full_query += `INSERT INTO labellink (_number, _id) VALUES (${_number}, ${seen_labels.indexOf(label.name)})\n`;
                 });
                 element.assignees.forEach(assignee => {
                     if(!seen_assignees.includes(assignee.login)) {
-                        full_query += `INSERT INTO '${repo}_assigneelist' (_name, _id) VALUES ('${assignee.login}', ${seen_assignees.length})\n`;
+                        full_query += `INSERT INTO assigneelist (_name, _id) VALUES ('${assignee.login}', ${seen_assignees.length})\n`;
                         seen_assignees.push(assignee.login);
                     }
-                    full_query += `INSERT INTO '${repo}_assigneelink' (_number, _id) VALUES (${_number}, ${seen_assignees.indexOf(assignee.login)})\n`;
+                    full_query += `INSERT INTO assigneelink (_number, _id) VALUES (${_number}, ${seen_assignees.indexOf(assignee.login)})\n`;
                 });
                 var _dateopen = Date.parse(element.created_at)/1000;
                 var _dateclose = element.closed_at === null ? "NULL" : Date.parse(element.closed_at)/1000;
 
-                full_query += `INSERT INTO '${repo}_issuelist' (_number, _type, _state, _dateopen, _dateclose) VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, ${_dateopen}, ${_dateclose})\n`;
+                full_query += `INSERT INTO issuelist (_number, _type, _state, _dateopen, _dateclose) VALUES (${_number}, '${_type}', ${_state ? 1 : 0}, ${_dateopen}, ${_dateclose})\n`;
             });
             total_loaded += data.data.length;
             mainWindowPublic.setProgressBar(total_loaded / total_issues);
@@ -345,7 +345,7 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
     var repo = current_loaded.split("/")[1];
     var owner = current_loaded.split("/")[0];
     
-    let db = new sqlite3.Database(`./${owner}_${repo}_issues.db`, sqlite3.OPEN_READWRITE);
+    let db = new sqlite3.Database(`./db_${owner}_${repo}.db`, sqlite3.OPEN_READWRITE);
     
     // once again, thank ChatGPT for this.
     // I was practically tearing my hair out trying to figure this out
