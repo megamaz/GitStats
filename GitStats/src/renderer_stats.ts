@@ -38,16 +38,74 @@ async function CreateIssueGraph() {
     // most of this code is extremely similar to v1.
     // We're grabbing the data, generating the graph data, then we'll ask main to give us a graph object which we'll shove into the page.
 
-    var sql_querry = `SELECT * FROM '${current_repo}_issuelist'`;
     var graph_label = "";
     // FILTERS
     var type_filter = <HTMLSelectElement>document.getElementById("type-filter");
     var label_filter = <HTMLInputElement>document.getElementById("label-filter");
     var assignee_filter = <HTMLInputElement>document.getElementById("assignee-filter");
 
-    // TODO write the sql_querry generator.
+    var all_filters = [];
 
-    sql_querry += " ORDER BY _dateopen"
+    var has_label_filter = false;
+    var has_assignee_filter = false;
+
+    // get label IDs
+    var label_ids = [];
+    if(label_filter.value != '') {
+        var label_id_querry = 'SELECT _id FROM labellist';
+        var filters = [];
+        label_filter.value.split(",").forEach(label => {
+            if(label != '') {
+                filters.push(`_label='${label}'`);
+            }
+        });
+        label_id_querry += " WHERE " + filters.join(" OR ");
+        
+        console.log(label_id_querry);
+        (await window.sql.Run(label_id_querry, {})).forEach(element => {
+            label_ids.push(element._id);
+        });
+        all_filters.push(`labellink._id IN (${label_ids.toString()})`);
+        has_label_filter = true;
+    }
+
+    // get assignee IDs
+    var assignee_ids = [];
+    if(assignee_filter.value != '') {
+        var assignee_id_querry = 'SELECT _id FROM assigneelist';
+        var filters = [];
+        assignee_filter.value.split(",").forEach(assignee => {
+            if(assignee != '') {
+                filters.push(`_name='${assignee}'`);
+            }
+        });
+        assignee_id_querry += " WHERE " + filters.join(" OR ");
+        
+        console.log(assignee_id_querry);
+        (await window.sql.Run(assignee_id_querry, {})).forEach(element => {
+            assignee_ids.push(element._id);
+        });
+        all_filters.push(`assigneelink._id IN (${assignee_ids.toString()})`);
+        has_assignee_filter = true;
+    }
+
+    var type_value = type_filter.options[type_filter.selectedIndex].value;
+    if(type_value != 'both') {
+        all_filters.push(`_type='${type_value}'`);
+    }
+
+    var sql_querry = `SELECT issuelist._number, issuelist._dateopen, issuelist._dateclose FROM issuelist`;
+    if(all_filters.length != 0) {
+        if(has_label_filter) {
+            sql_querry += " INNER JOIN labellink ON issuelist._number=labellink._number";
+        }
+        if(has_assignee_filter) {
+            sql_querry += " INNER JOIN assigneelink ON issuelist._number=assigneelink._number";
+        }
+        sql_querry += " WHERE " + all_filters.join(" AND ");
+    }
+
+    sql_querry += " ORDER BY _dateopen";
     console.log(sql_querry);
 
     var issue_data: Array<Issue> = await window.sql.Run(sql_querry, {});
@@ -63,7 +121,7 @@ async function CreateIssueGraph() {
     var steps = [];
     for (let i = oldest._dateopen; i < newest._dateopen; i += stepsize) {
         steps.push(i);
-        labels.push(new Date(i).toISOString().slice(0, 10));
+        labels.push(new Date(i*1000).toISOString().slice(0, 10));
     }
 
     var amount = 0; // amount of opened issues at any point
@@ -74,8 +132,7 @@ async function CreateIssueGraph() {
         amount++;
 
         // we need to save our closes (for the reason mentioned above)
-        // a value of 0 means it's still opened
-        if (issue._dateclose != 0)
+        if (issue._dateclose != null)
             closes.push(issue._dateclose);
 
         // now we need to check if the issue was closed in the latest timestep
@@ -112,14 +169,20 @@ async function CreateIssueGraph() {
             ]
         }
     };
-    GetChartJSChart(data);
+    CreateChartElementFromData(data);
 }
 
-function GetChartJSChart(chartjs_data) {
-    // returns a chartjs data
+function CreateChartElementFromData(chartjs_data) {
+    var chart_div = document.createElement("div");
     var chart_canvas = document.createElement("canvas");
+    var remove_button = document.createElement("button");
+    remove_button.innerText = "Remove"
+    remove_button.setAttribute("onclick", `this.parentNode.remove()`);
 
-    document.body.appendChild(chart_canvas);
+    chart_div.appendChild(remove_button);
+    chart_div.appendChild(chart_canvas);
+
+    document.body.appendChild(chart_div);
 
     window.utilities.CreateChart(chart_canvas, chartjs_data);
 }
