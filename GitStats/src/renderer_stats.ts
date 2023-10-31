@@ -49,6 +49,9 @@ async function CreateIssueGraph() {
     var has_label_filter = false;
     var has_assignee_filter = false;
 
+    var label_count = 0;
+    var assignee_count = 0;
+
     // get label IDs
     var label_ids = [];
     if(label_filter.value != '') {
@@ -57,6 +60,7 @@ async function CreateIssueGraph() {
         label_filter.value.split(",").forEach(label => {
             if(label != '') {
                 filters.push(`_label='${label}'`);
+                label_count ++;
             }
         });
         label_id_querry += " WHERE " + filters.join(" OR ");
@@ -77,6 +81,7 @@ async function CreateIssueGraph() {
         assignee_filter.value.split(",").forEach(assignee => {
             if(assignee != '') {
                 filters.push(`_name='${assignee}'`);
+                assignee_count ++;
             }
         });
         assignee_id_querry += " WHERE " + filters.join(" OR ");
@@ -102,7 +107,19 @@ async function CreateIssueGraph() {
         if(has_assignee_filter) {
             sql_querry += " INNER JOIN assigneelink ON issuelist._number=assigneelink._number";
         }
-        sql_querry += " WHERE " + all_filters.join(" AND ");
+        sql_querry += " WHERE " + all_filters.join(" AND ") + ` GROUP BY issuelist._number`;
+        // thanks ChatGPT
+        if(label_count != 0 || assignee_count != 0) {
+            sql_querry += " HAVING "
+            if(label_count != 0) {
+                sql_querry += `COUNT(DISTINCT labellink._id) = ${label_count}`
+            }
+            if(label_count != 0 && assignee_count != 0)
+                sql_querry += " AND "
+            if(assignee_count != 0) {
+                sql_querry += `COUNT(DISTINCT assigneelink._id) = ${assignee_count}`
+            }
+        }
     }
 
     sql_querry += " ORDER BY _dateopen";
