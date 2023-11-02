@@ -40,5 +40,14 @@
     "rimraf": "^5.0.5",
     "sqlite3": "^5.1.6",
     "typescript": "^5.2.2"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "ignore": [
+          "userdata.json", "./*.db"
+        ]
+      }
+    }
   }
 }
