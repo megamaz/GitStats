@@ -25,6 +25,32 @@ function avg(a: number[]) {
     return sum / a.length;
 }
 
+/**
+ * @param t - The amount of time.
+ * @returns A string formatted as "X days, X hours, X minutes, X seconds"
+ */
+function timeMeasurement(t: Date): string {
+    var days = Math.floor(t.getTime() / (1000 * 60 * 60 * 24));
+    var hours = t.getHours();
+    var minutes = t.getMinutes();
+    var seconds = t.getSeconds();
+
+    var t_string = "";
+    if(days > 0) {
+        t_string += `${days} day${days != 1 ? 's' : ''}, `;
+    }
+    if(hours > 0) {
+        t_string += `${hours} hour${hours != 1 ? 's' : ''}, `;
+    }
+    if(minutes > 0) {
+        t_string += `${minutes} minute${minutes != 1 ? 's' : ''}, `;
+    }
+    if(seconds > 0) {
+        t_string += `${seconds} second${seconds != 1 ? 's' : ''}`;
+    }
+    return t_string.trim().endsWith(",") ? t_string.trim().substring(0, t_string.length-2) : t_string.trim();
+}
+
 // things to do immediatly on load
 async function OnStart() {
     current_repo = await window.gitstats.GetCurrentLoaded();
@@ -57,6 +83,7 @@ async function CreateIssueGraph() {
     var type_filter = <HTMLSelectElement>document.getElementById("type-filter");
     var label_filter = <HTMLInputElement>document.getElementById("label-filter");
     var assignee_filter = <HTMLInputElement>document.getElementById("assignee-filter");
+    var since_filter = <HTMLInputElement>document.getElementById("since-filter");
 
     var all_filters = [];
 
@@ -65,6 +92,12 @@ async function CreateIssueGraph() {
 
     var label_count = 0;
     var assignee_count = 0;
+
+    // since filter
+    if(since_filter.value != '') {
+        var after = Date.parse(since_filter.value)/1000;
+        all_filters.push(`_dateopen>${after}`);
+    }
 
     // get label IDs
     var label_ids = [];
@@ -142,10 +175,13 @@ async function CreateIssueGraph() {
     await window.sql.Run(`CREATE TABLE temptable AS ${sql_querry}`);
     var issue_data: Array<Issue> = await window.sql.Run('SELECT * FROM temptable');
     console.log(issue_data);
+
     // grabbing some extra data.
     var extra_data: ExtraData[] = [];
-    var avg_open_time = []; // how long an issue stays open on average (this is an array of how long each issue stayed open, then it'll be averaged)
+    
+    var avg_open_time: number[] = []; // how long an issue stays open on average (this is an array of how long each issue stayed open, then it'll be averaged)
     var total_open = (await window.sql.Run("SELECT * FROM temptable WHERE _state=1")).length; // how many are open right now
+    var oldest_open = (await window.sql.Run("SELECT _number FROM temptable WHERE _state=1 ORDER BY _dateopen LIMIT 1"))[0]._number;
 
 
     var labels = []; // graph X-axis
@@ -210,10 +246,23 @@ async function CreateIssueGraph() {
     };
 
     // gen our extra data
+    var time_diff = new Date(avg(avg_open_time)*1000);
     extra_data.push({
         label: "Average Time Open",
-        value: new Date(avg(avg_open_time)*1000)
+        value: timeMeasurement(time_diff)
     });
+    extra_data.push({
+        label:"Longest open",
+        value: timeMeasurement(new Date(Math.max(...avg_open_time)*1000))
+    });
+    extra_data.push({
+        label:"Shortest open",
+        value: timeMeasurement(new Date(Math.min(...avg_open_time)*1000))
+    });
+    extra_data.push({
+        label:"Oldest Still Open",
+        value:`<a href="#" onclick="window.utilities.shell.openExternal('https://github.com/${current_repo}/issues/${oldest_open}')">#${oldest_open}</a>`
+    })
     extra_data.push({
         label:"Total Open",
         value:total_open
@@ -241,7 +290,7 @@ function CreateChartElementFromData(chartjs_data: Object, extra_data?: ExtraData
     if(extra_data !== undefined) {
         extra_data.forEach(element => {
             var newdata = document.createElement("p");
-            newdata.innerText = `${element.label}: ${element.value}`
+            newdata.innerHTML = `${element.label}: ${element.value}`
             chart_div.appendChild(newdata);
         });
     }
