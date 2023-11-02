@@ -341,7 +341,7 @@ ipcMain.handle("gitstats:PopulateIssueTable", async (event: Event, repo: string)
     });
 });
 
-ipcMain.handle("sql:Run", (event: Event, command: string, params) => {
+ipcMain.handle("sql:Run", (event: Event, command: string, params?) => {
     var repo = current_loaded.split("/")[1];
     var owner = current_loaded.split("/")[0];
     
