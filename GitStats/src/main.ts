@@ -361,6 +361,6 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params?) => {
 
 ipcMain.handle("utilities:LoadURL", (event: Event, url: string) => {
     if (!running_fetch_task) {
-        Main.mainWindow.loadURL(`${__dirname}/${url}`);
+        Main.mainWindow.loadURL(`${url}`);
     }
 });
