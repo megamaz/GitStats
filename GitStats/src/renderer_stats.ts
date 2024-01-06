@@ -5,22 +5,62 @@ interface Issue {
     _number: number;
     _type: string;
     _state: boolean;
-    _labels: string;
-    _assignee: string;
     _dateopen: number;
     _dateclose: number;
+}
+
+interface ExtraData {
+    label: string,
+    value: any
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    OnStart();
+});
+
+// utility
+function avg(a: number[]) {
+    var sum = 0;
+    a.forEach(n => {sum += n;});
+    return sum / a.length;
+}
+
+/**
+ * @param t - The amount of time.
+ * @returns A string formatted as "X days, X hours, X minutes, X seconds"
+ */
+function timeMeasurement(t: Date): string {
+    var days = Math.floor(t.getTime() / (1000 * 60 * 60 * 24));
+    var hours = t.getHours();
+    var minutes = t.getMinutes();
+    var seconds = t.getSeconds();
+
+    var t_string = "";
+    if(days > 0) {
+        t_string += `${days} day${days != 1 ? 's' : ''}, `;
+    }
+    if(hours > 0) {
+        t_string += `${hours} hour${hours != 1 ? 's' : ''}, `;
+    }
+    if(minutes > 0) {
+        t_string += `${minutes} minute${minutes != 1 ? 's' : ''}, `;
+    }
+    if(seconds > 0) {
+        t_string += `${seconds} second${seconds != 1 ? 's' : ''}`;
+    }
+    return t_string.trim().endsWith(",") ? t_string.trim().substring(0, t_string.length-2) : t_string.trim();
 }
 
 // things to do immediatly on load
 async function OnStart() {
     current_repo = await window.gitstats.GetCurrentLoaded();
     var header = document.getElementById("repoheader");
+    var hyperlink_header = document.getElementById("linktorepo_header");
+    
     header.innerText = `${current_repo}`;
+    hyperlink_header.setAttribute("onclick", `window.utilities.shell.openExternal("https://github.com/${current_repo}");`)
 
 }
-window.addEventListener('DOMContentLoaded', () => {
-    OnStart();
-})
 
 function FetchAllIssues() {
     var p = document.createElement("p");
@@ -43,6 +83,7 @@ async function CreateIssueGraph() {
     var type_filter = <HTMLSelectElement>document.getElementById("type-filter");
     var label_filter = <HTMLInputElement>document.getElementById("label-filter");
     var assignee_filter = <HTMLInputElement>document.getElementById("assignee-filter");
+    var since_filter = <HTMLInputElement>document.getElementById("since-filter");
 
     var all_filters = [];
 
@@ -51,6 +92,12 @@ async function CreateIssueGraph() {
 
     var label_count = 0;
     var assignee_count = 0;
+
+    // since filter
+    if(since_filter.value != '') {
+        var after = Date.parse(since_filter.value)/1000;
+        all_filters.push(`_dateopen>${after}`);
+    }
 
     // get label IDs
     var label_ids = [];
@@ -66,7 +113,7 @@ async function CreateIssueGraph() {
         label_id_querry += " WHERE " + filters.join(" OR ");
         
         console.log(label_id_querry);
-        (await window.sql.Run(label_id_querry, {})).forEach(element => {
+        (await window.sql.Run(label_id_querry)).forEach(element => {
             label_ids.push(element._id);
         });
         all_filters.push(`labellink._id IN (${label_ids.toString()})`);
@@ -87,7 +134,7 @@ async function CreateIssueGraph() {
         assignee_id_querry += " WHERE " + filters.join(" OR ");
         
         console.log(assignee_id_querry);
-        (await window.sql.Run(assignee_id_querry, {})).forEach(element => {
+        (await window.sql.Run(assignee_id_querry)).forEach(element => {
             assignee_ids.push(element._id);
         });
         all_filters.push(`assigneelink._id IN (${assignee_ids.toString()})`);
@@ -99,7 +146,7 @@ async function CreateIssueGraph() {
         all_filters.push(`_type='${type_value}'`);
     }
 
-    var sql_querry = `SELECT issuelist._number, issuelist._dateopen, issuelist._dateclose FROM issuelist`;
+    var sql_querry = `SELECT * FROM issuelist`;
     if(all_filters.length != 0) {
         if(has_label_filter) {
             sql_querry += " INNER JOIN labellink ON issuelist._number=labellink._number";
@@ -125,8 +172,17 @@ async function CreateIssueGraph() {
     sql_querry += " ORDER BY _dateopen";
     console.log(sql_querry);
 
-    var issue_data: Array<Issue> = await window.sql.Run(sql_querry, {});
+    await window.sql.Run(`CREATE TABLE temptable AS ${sql_querry}`);
+    var issue_data: Array<Issue> = await window.sql.Run('SELECT * FROM temptable');
     console.log(issue_data);
+
+    // grabbing some extra data.
+    var extra_data: ExtraData[] = [];
+    
+    var avg_open_time: number[] = []; // how long an issue stays open on average (this is an array of how long each issue stayed open, then it'll be averaged)
+    var total_open = (await window.sql.Run("SELECT * FROM temptable WHERE _state=1")).length; // how many are open right now
+    var oldest_open = (await window.sql.Run("SELECT _number FROM temptable WHERE _state=1 ORDER BY _dateopen LIMIT 1"))[0]._number;
+
 
     var labels = []; // graph X-axis
     var points = []; // graph Y-axis
@@ -149,8 +205,10 @@ async function CreateIssueGraph() {
         amount++;
 
         // we need to save our closes (for the reason mentioned above)
-        if (issue._dateclose != null)
+        if (issue._dateclose != null) {
+            avg_open_time.push(issue._dateclose - issue._dateopen);
             closes.push(issue._dateclose);
+        }
 
         // now we need to check if the issue was closed in the latest timestep
         // if it was, we also need to remember that, in order to remove it from the closes list
@@ -186,10 +244,40 @@ async function CreateIssueGraph() {
             ]
         }
     };
-    CreateChartElementFromData(data);
+
+    // gen our extra data
+    var time_diff = new Date(avg(avg_open_time)*1000);
+    extra_data.push({
+        label: "Average Time Open",
+        value: timeMeasurement(time_diff)
+    });
+    extra_data.push({
+        label:"Longest open",
+        value: timeMeasurement(new Date(Math.max(...avg_open_time)*1000))
+    });
+    extra_data.push({
+        label:"Shortest open",
+        value: timeMeasurement(new Date(Math.min(...avg_open_time)*1000))
+    });
+    extra_data.push({
+        label:"Oldest Still Open",
+        value:`<a href="#" onclick="window.utilities.shell.openExternal('https://github.com/${current_repo}/issues/${oldest_open}')">#${oldest_open}</a>`
+    })
+    extra_data.push({
+        label:"Total Open",
+        value:total_open
+    });
+    CreateChartElementFromData(data, extra_data);
+
+    // and now we can get rid of our temp table
+    window.sql.Run("DROP TABLE temptable");
 }
 
-function CreateChartElementFromData(chartjs_data) {
+/**
+ * @param chartjs_data - The ChartJS data that will be made into a grap.
+ * @param extra_data - An array of ExtraData objects to append to the div. The data will be appended as <p>label: value</p>
+ */
+function CreateChartElementFromData(chartjs_data: Object, extra_data?: ExtraData[]) {
     var chart_div = document.createElement("div");
     var chart_canvas = document.createElement("canvas");
     var remove_button = document.createElement("button");
@@ -198,6 +286,14 @@ function CreateChartElementFromData(chartjs_data) {
 
     chart_div.appendChild(remove_button);
     chart_div.appendChild(chart_canvas);
+    chart_div.setAttribute("style", "border:1px solid black");
+    if(extra_data !== undefined) {
+        extra_data.forEach(element => {
+            var newdata = document.createElement("p");
+            newdata.innerHTML = `${element.label}: ${element.value}`
+            chart_div.appendChild(newdata);
+        });
+    }
 
     document.body.appendChild(chart_div);
 

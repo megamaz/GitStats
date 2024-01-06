@@ -4,7 +4,7 @@
   "description": "A Lightweight ElectronJS app to get statistics about a repository.",
   "keywords": [],
   "main": "./dist/app.js",
-  "version": "2.0.2",
+  "version": "2.0.4",
   "author": "megamaz",
   "scripts": {
     "start": "electron-forge start",
@@ -26,11 +26,12 @@
     "typescript": "^5.2.2"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^6.4.2",
-    "@electron-forge/maker-deb": "^6.4.2",
-    "@electron-forge/maker-rpm": "^6.4.2",
-    "@electron-forge/maker-squirrel": "^6.4.2",
-    "@electron-forge/maker-zip": "^6.4.2",
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-rpm": "^7.2.0",
+    "@electron-forge/maker-squirrel": "^7.2.0",
+    "@electron-forge/maker-zip": "^7.2.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "@types/electron": "^1.6.10",
     "@types/node": "^20.8.8",
     "ajv": "^8.12.0",
@@ -40,5 +41,16 @@
     "rimraf": "^5.0.5",
     "sqlite3": "^5.1.6",
     "typescript": "^5.2.2"
+  },
+  "config": {
+    "forge": {
+      "makers": [
+        {
+          "name":"@electron-forge/maker-squirrel",
+          "platforms": ["win32"]
+        }
+      ],
+      "publishers": []
+    }
   }
 }

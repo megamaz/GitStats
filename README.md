@@ -22,15 +22,14 @@ I recommend you create a `userdata.json` file inside the `src` directory, so tha
 # Plans for v2
 - Completely open filtering for data. This means...
     - Ability to view data for
-        - [x] issues
-        - [x] pull requests
-        - [ ] contributors
-        - [ ] commits
+        - [x] Issues
+        - [x] Pull Requests
+        - [ ] Contributors
+        - [ ] Commits
         - And possibly more.
     - Ability to filter from those data.
         - Issues / PR:
             - [X] Labels
-            - [ ] Commentor
             - [X] Assignee
             - [X] Issue / PR Type
 - [ ] Ability to export the data as a CSV file.

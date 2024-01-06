@@ -3,7 +3,9 @@
     <head></head>
 
     <body>
-        <h1 id="repoheader">Loaded/Repo</h1>
+        <a id="linktorepo_header" href="#">
+            <h1 id="repoheader">Loaded/Repo</h1>
+        </a>
         <a href="#" onclick="window.utilities.LoadURL('page_index.html')">Home</a>
         <form id="stats" onsubmit="return false">
             <!-- 
@@ -28,7 +30,11 @@
             
             <label for="assignee-filter">Assignee filter (separate by comma, no space): </label>
             <input type="text" placeholder="Assignee" id="assignee-filter"><br>
+
+            <label for="since-filter">Since: </label>
+            <input type="date" id="since-filter">
         </form>
+        <br>
         <script src="./renderer_stats.js"></script>
     </body>
 

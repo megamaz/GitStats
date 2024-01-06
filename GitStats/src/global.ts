@@ -11,7 +11,7 @@ export interface LoginAPI {
 }
 
 export interface SqlAPI {
-  Run: (command: string, params) => Promise<any>
+  Run: (command: string, params?) => Promise<any>
 }
 
 export interface UtilitiesAPI {
