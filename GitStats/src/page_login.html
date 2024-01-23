@@ -7,6 +7,19 @@
         <a href="#" onclick="window.utilities.LoadURL('page_index.html')">Home</a>
         <br>
         <a href="#" onclick="window.utilities.shell.openExternal('https://docs.github.com/en/enterprise-server@3.4/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#about-personal-access-tokens')"><i style="font-size:12px">How do I get my GitHub token?</i><br></a>
+        <ul>
+            <h3>Required Permissions</h3>
+            <li>Repository Access: All Repositories</li>
+            <li>
+                <ul>Repository Permissions:
+                    <li>Discussions: Read-only</li>
+                    <li>Issues: Read-only</li>
+                    <li>Pull Requests: Read-only</li>
+                    <li>Metadata: Read-only (automatic)</li>
+                </ul>
+            </li>
+
+        </ul>
         <form onsubmit="TryLogin(); return false" id="login">
             <input type="password" placeholder="Insert Token" id="token-insert">
             <input type="submit">

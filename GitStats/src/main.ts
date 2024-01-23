@@ -361,6 +361,14 @@ ipcMain.handle("sql:Run", (event: Event, command: string, params?) => {
 
 ipcMain.handle("utilities:LoadURL", (event: Event, url: string) => {
     if (!running_fetch_task) {
-        Main.mainWindow.loadURL(`${url}`);
+        // I have to do this chceck because the build version does not
+        // work with __dirname/url. This is pretty annoying, but this
+        // should fix it. If it doesn't, that's pretty annoying...
+        if(fs.existsSync(`${__dirname}/${url}`)) {
+            Main.mainWindow.loadURL(`${__dirname}/${url}`);
+        }
+        else {
+            Main.mainWindow.loadURL(`${url}`);
+        }
     }
 });
